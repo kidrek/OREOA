@@ -6,7 +6,10 @@ L'application OREO doit être présente sur le système de fichiers dans un rép
 ## ROADMAP
 
 1. Detecter tout nouveau fichier
+Source : https://www.kdnuggets.com/monitor-your-file-system-with-pythons-watchdog
+
 2. Réaliser le HASH SHA256 du fichier
+
 3. Identifier le type de collecte (Velociraptor / Malware / Dump mémoire), via pattern
 3.1 Malware -> AssemblyLine, Glimps
 3.2 Identifier le type de fichier
@@ -84,3 +87,10 @@ watchmedo auto-restart --directory=./ --pattern="*.py" --recursive -- celery --a
 ```
 
 Source : https://celery.school/watchfiles-reload-celery-worker-code-changes
+
+
+### Run tasks daemon
+
+```
+python3 run_task.py
+```
