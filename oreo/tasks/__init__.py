@@ -1,1 +1,1 @@
-__all__ = ["run_extract", "run_sha256"]
+__all__ = ["run_extract", "run_move_file", "run_sha256"]
