@@ -1,9 +1,4 @@
-import logging
-import hashlib
-
-
-import os
-import subprocess
+import hashlib, logging, os, subprocess
 
 def sha256_generate(filepath:str):
     logging.info(f'Task SHA256 : Generate Hash')
