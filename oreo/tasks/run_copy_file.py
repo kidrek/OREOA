@@ -1,10 +1,10 @@
 import io, logging, os, re, subprocess, zipfile
 
 def run(filepath:str, output_filepath:str):
-    logging.info("Move task...", 60)
+    logging.info("Copy task...", 60)
 
     command = [
-        'mv', '-f',
+        'cp', '-rf',
         filepath, 
         output_filepath
     ]        

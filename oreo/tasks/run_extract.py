@@ -1,11 +1,12 @@
-import io, logging, os, re, subprocess, zipfile
+import io, logging, os, re, subprocess, time, zipfile
 
 def run(filepath:str, output_filepath:str, password:str='', nested:bool=True):
-    logging.info("Running evidence extraction...", 60)
+    logging.info(f'Task Extract files : Running task')
 
     """ Extract a zip file including any nested zip files
         Delete the zip file(s) after extraction
     """
+    logging.info(f'Task Extract files : Extract file {filepath}')
     with zipfile.ZipFile(filepath, 'r') as zfile:
         if nested == False:
             command = [
@@ -23,7 +24,8 @@ def run(filepath:str, output_filepath:str, password:str='', nested:bool=True):
         try:
             result = subprocess.run(command, check=True, capture_output=True, text=True)
             if nested:
-                os.remove(filepath)      
+                os.remove(filepath)
+                time.sleep(0.01)      
 
             print(f"output: {result.stdout}")
             if result.stderr:
@@ -31,6 +33,7 @@ def run(filepath:str, output_filepath:str, password:str='', nested:bool=True):
         except subprocess.CalledProcessError as e:
             print(f"Error: {e.stderr}")
             raise e
+        
 
     for root, dirs, files in os.walk(output_filepath):
         for filename in files:
