@@ -1,1 +1,1 @@
-# OREOA (cOllect aRtefact from Evidence, prOcess and Analyse it)
+# OREOA (mOnitor aRtefact from Evidence, prOcess and Analyse it)
