@@ -34,6 +34,12 @@ L'arborescence doit également respecter quelques prérequis :
 ```
 
 
+Certains outils sont également requis 
+
+```
+apt install -f fdfind
+```
+
 ### Serveur REDIS
 
 ``` docker-compose.yml
@@ -75,6 +81,8 @@ docker-compose up
 Le worker celery démarre de la manière suivante : 
 
 ```
+git clone https://github.com/kidrek/OREO.git
+cd OREO
 celery --app=oreo worker --loglevel=info
 ```
 
@@ -83,10 +91,14 @@ Pour cela, il est nécessaire d'installer watchdog.
 
 ```
 pip install watchdog
+
+git clone https://github.com/kidrek/OREO.git
+cd OREO
 watchmedo auto-restart --directory=./ --pattern="*.py" --recursive -- celery --app=oreo worker --concurrency=1  --loglevel=INFO
 ```
 
-Source : https://celery.school/watchfiles-reload-celery-worker-code-changes
+Source : 
+- https://celery.school/watchfiles-reload-celery-worker-code-changes
 
 
 ### Run tasks daemon
@@ -94,3 +106,12 @@ Source : https://celery.school/watchfiles-reload-celery-worker-code-changes
 ```
 python3 run_task.py
 ```
+
+Sources : 
+- https://bilalozdemir.me/posts/python/task-queue-celery-redis/
+- https://dev.to/akarshan/the-curious-case-of-celery-work-flows-39f7
+- https://ask.github.io/celery/userguide/executing.html
+
+## References
+
+https://medium.com/@mika.palmytech.cc/celery-django-best-practices-a9fab2b1c9d1
