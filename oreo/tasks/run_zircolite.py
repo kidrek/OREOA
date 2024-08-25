@@ -1,4 +1,4 @@
-import glob, logging, subprocess
+import glob, logging, os, subprocess
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -14,6 +14,8 @@ def zircolite_Windows(evtx_path, analyse_output_filename):
 
     try:
         logging.info(f"Starting Zircolite scan for {evtx_path}")
+
+        os.makedirs(f"{analyse_output_filename}", exist_ok=True)
 
         evtx_files = []
 
@@ -35,11 +37,13 @@ def zircolite_Windows(evtx_path, analyse_output_filename):
 
                 docker_command = (
                     f"docker run --rm --tty "
+                    f"--user $(id -u):$(id -g) "
                     f"-v {intput_evtx_directory}:/case/input:ro "
                     f"-v {analyse_output_filename}:/case/output "
                     f"wagga40/zircolite "
                     f"--ruleset rules/rules_windows_generic_full.json --evtx /case/input/{input_evtx_filename} "
-                    f"-o /case/output/{output_filename}"
+                    f"-o /case/output/{output_filename} " 
+                    f"-l /case/output/zircolite.log -t /case/output/zircolite.tmp"
                 )
 
                 logging.info(f"Running Docker command: {docker_command}")
