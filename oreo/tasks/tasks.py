@@ -24,17 +24,25 @@ def task_extract_files(self, filepath:str, output_filepath:str, password:str=Non
     run_extract.run(filepath, output_filepath, password, nested=False)
 
 @shared_task(bind=True, 
-             name='task_find_evtx',
+             name='task_process_evtx',
              priority=2,
              max_retry=5,
              soft_time_limit=600)
-def task_find_evtx(self, filepath:str):
-    logging.info(f'Task FindEVTX : Call task')
-    dir_evtx=[]
-    for pattern in env['EVTX_LOCATION_PATTERN'].split(','):
-        dir_evtx.append(run_find_directory.init(pattern, filepath))
-    logging.info(f"Result: {dir_evtx}")
+def task_process_evtx(self, input_path:str, analyse_output_filename:str):
+    logging.info(f'Task Process EVTX : Call task')
 
+    """
+    dir_evtx=[]
+    for pattern in env['EVTX_PATTERN'].split(','):
+        dir_evtx = dir_evtx + run_find_files.find_files(pattern, input_path)
+    logging.info(f"Result: {dir_evtx}")
+    logging.info(f'Task FindEVTX : filepath: {input_path}')
+
+    count = 0
+    for dir in dir_evtx:
+        run_zircolite.zircolite_Windows(dir, analyse_output_filename)
+    """
+    run_zircolite.zircolite_Windows(input_path, f"{analyse_output_filename}/zircolite")
 
 @shared_task(bind=True, 
              name='task_copy_file',
@@ -78,13 +86,17 @@ def task_init(self, filename):
         if original_filename != sanitize_filename:
             task_move_file.delay(filename, f"{original_path}/{sanitize_filename}",)
 
+        # Define output and analyse folders for this artifacts
+        scan_output_filename = f"{sanitize_filename}.output"
+        analyse_output_filename = f"{sanitize_filename}.analyse"
+
         # 1st task : generate hash
         task_sha256.delay(f"{original_path}/{sanitize_filename}",)
 
         # 2nd task : Workflow by evidence type
         evidence_type = determine_evidence_type(original_filename)
         if evidence_type == "VELOCIRAPTOR":
-            task_extract_files.delay(f"{original_path}/{sanitize_filename}", f"{env['SCAN_OUTPUT_PATH']}/{sanitize_filename}_extracted", env['VELOCIRAPTOR_EVIDENCE_PASSWORD'])
+            task_extract_files.delay(f"{original_path}/{sanitize_filename}", f"{env['SCAN_OUTPUT_PATH']}/{scan_output_filename}", env['VELOCIRAPTOR_EVIDENCE_PASSWORD'])
 
             # Create a single task
             """
@@ -94,13 +106,13 @@ def task_init(self, filename):
         else:
             if evidence_type == "other":
                 if filename.endswith('.zip') or filename.endswith('.7z'):
-                    task_extract_files.delay(f"{original_path}/{sanitize_filename}", f"{env['SCAN_OUTPUT_PATH']}/{sanitize_filename}_extracted")
+                    task_extract_files.delay(f"{original_path}/{sanitize_filename}", f"{env['SCAN_OUTPUT_PATH']}/{scan_output_filename}")
                 else:
                     task_move_file.delay(filename, f"{env['SCAN_OUTPUT_PATH']}/{sanitize_filename}",)
                 
 
         # X task : Find EVTX
-        task_find_evtx.delay(f"{env['SCAN_OUTPUT_PATH']}/{sanitize_filename}_extracted",)
+        task_process_evtx.delay(f"{env['SCAN_OUTPUT_PATH']}/{scan_output_filename}", f"{env['SCAN_OUTPUT_PATH']}/{analyse_output_filename}")
 
 
 # Function to replace all characters, except 'a-zA-Z0-9._-' by -
