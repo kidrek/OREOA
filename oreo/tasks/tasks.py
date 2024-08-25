@@ -44,6 +44,12 @@ def task_process_evtx(self, input_path:str, analyse_output_filename:str):
     """
     run_zircolite.zircolite_Windows(input_path, f"{analyse_output_filename}/zircolite")
 
+    from oreo.celery import app
+    app.send_task('add_index_pattern_to_kibana', args=(env['KIBANA_HOST'],'zircolite*','zircolite'))
+    ## Add timefiel : matches.SystemTime / source : https://www.elastic.co/docs/api/doc/kibana/v8/operation/operation-createdataviewdefaultw#operation-createdataviewdefaultw-body-application-json-elastic-api-version-2023-10-31-data_view-timefieldname
+    
+    app.send_task('send_data_to_elk', args=(f"{analyse_output_filename}/zircolite", "zircolite", env["ES_HOST"],env["ES_USER"], env["ES_PASSWORD"]))
+
 @shared_task(bind=True, 
              name='task_copy_file',
              priority=0,

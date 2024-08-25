@@ -1,4 +1,5 @@
 __all__ = [
+            "elastic_utility",
             "run_copy_file",
             "run_extract", 
             "run_find_directory", 
