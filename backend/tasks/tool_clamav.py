@@ -3,19 +3,20 @@ from prefect import task
 
 
 @task(log_prints=True)
-def run(scan_output_path, sanitized_filename):
+def run(input_path, report_path):
     logging.info("Running ClamAV Analysis...", 60)
     image_name = "clamav-image"
 
     docker_command = (
         f"docker run -it --rm "
         f"--user $(id -u):$(id -g) --entrypoint /init-unprivileged "
-        f"-v {scan_output_path}:/scandir "
+        f"-v {input_path}:/scandir "
+        f"-v {report_path}:/report "
         f"clamav/clamav:unstable "
         f"clamscan "
-        f"-l /scandir/{sanitized_filename}.analyse/clamav.log " 
+        f"-l /report/clamav.log " 
         f"-r -i --quiet "
-        f"/scandir/{sanitized_filename}.output "
+        f"/scandir/ "
     )
 
 
