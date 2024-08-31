@@ -1,0 +1,39 @@
+FROM ubuntu:noble
+LABEL maintainer="Log2Timeline <log2timeline-dev@googlegroups.com>"
+
+# Create container with:
+# docker build . --no-cache --force-rm -t plaso -f ./dockers/plaso_dockerfile
+
+# Run log2timeline on artifacts stored in /data/artifacts with:
+# docker run -ti --user $(id -u):$(id -g) -v <ARTEFACT>:/data:ro -v <REPORT_DIR>:/report plaso log2timeline -z UTC --storage_file /opt/report/log2timeline.plaso --partitions all --volumes all  --temporary_directory /opt/report/tmp/ /opt/data 
+
+ARG PPA_TRACK=dev
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Combining the apt-get commands into a single run reduces the size of the resulting image.
+# The apt-get installations below are interdependent and need to be done in sequence.
+RUN apt-get -y update && \
+    apt-get -y install apt-transport-https apt-utils && \
+    apt-get -y install libterm-readline-gnu-perl software-properties-common
+
+RUN add-apt-repository -y ppa:gift/$PPA_TRACK
+RUN apt-get -y update && \
+    apt-get -y upgrade
+
+RUN apt-get -y install git-core locales plaso-tools wget && \
+    apt-get autoremove --purge --yes && \
+    rm -rf /var/lib/apt/lists/*
+
+# Set terminal to UTF-8 by default
+RUN locale-gen en_US.UTF-8 && update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
+ENV LANG en_US.UTF-8
+ENV LC_ALL en_US.UTF-8
+
+WORKDIR /usr/local/bin
+RUN wget https://raw.githubusercontent.com/log2timeline/plaso/main/config/docker/plaso-switch.sh
+RUN chmod a+x plaso-switch.sh
+
+WORKDIR /opt/plaso/
+RUN git clone https://github.com/log2timeline/plaso.git /opt/plaso/src
+ENTRYPOINT ["/usr/local/bin/plaso-switch.sh"]
