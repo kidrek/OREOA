@@ -12,7 +12,7 @@ def run(input_path, report_path):
         f"--user $(id -u):$(id -g) --entrypoint /init-unprivileged "
         f"-v {input_path}:/scandir "
         f"-v {report_path}:/report "
-        f"clamav/clamav:unstable "
+        f"clamav/clamav:latest "
         f"clamscan "
         f"-l /report/clamav.log " 
         f"-r -i --quiet "

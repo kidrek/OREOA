@@ -3,6 +3,13 @@ from pathlib import Path
 from prefect import task
 from . import utility
 
+from dotenv import load_dotenv
+from os import environ as env
+
+## Load variables from .env file
+dotenv_path = Path('.env')
+load_dotenv(dotenv_path=dotenv_path)
+
 
 @task(log_prints=True)
 def run(input_path, analyse_output_path):
@@ -23,6 +30,7 @@ def run(input_path, analyse_output_path):
             f"-r /opt/chainsaw-src/rules "
             f"--timezone UTC "
             f"--json -o /opt/report/chainsaw.log.json " 
+            f"--skip-errors "
         )
 
         logging.info(f"Running Docker command: {docker_command}")
