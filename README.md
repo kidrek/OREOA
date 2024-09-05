@@ -22,5 +22,20 @@ python3 oreoa_monitor.py
 ### Manual mode
 
 ```
+$ python3 oreoa.py -h
+usage: OREOA [-h] [-i INPUT_EVIDENCE] [-o OUTPUT_ANALYSE] [-c CASE]
+
+Tool to process and analyse forensic data
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i INPUT_EVIDENCE, --input_evidence INPUT_EVIDENCE
+  -o OUTPUT_ANALYSE, --output_analyse OUTPUT_ANALYSE
+  -c CASE, --case CASE
+
+
+
+# Exemple :
+
 python3 oreoa.py -i {ABSOLUTE_PATH}/input/collection-...-2024-08-12t12_36_13_02_00.zip -o {ABSOLUTE_PATH}/output/{EVIDENCE_ENDPOINT_NAME}
 ```
