@@ -3,12 +3,7 @@ from pathlib import Path
 from prefect import task
 from . import utility
 
-from dotenv import load_dotenv
 from os import environ as env
-
-## Load variables from .env file
-dotenv_path = Path('.env')
-load_dotenv(dotenv_path=dotenv_path)
 
 @task(log_prints=True)
 def zircolite_Windows(input_path, analyse_output_path):
@@ -107,7 +102,7 @@ def run2Timesketch(input_path, analyse_output_path):
                     f"wagga40/zircolite "
                     f"--ruleset rules/rules_windows_generic_full.json --evtx /case/input/{input_evtx_filename} "
                     f"--template templates/exportForTimesketch.tmpl "
-                    f"--templateOutput /case/output/ForTimesketch_{output_filename} " 
+                    f"--templateOutput /case/output/Zircolite2Timesketch.json " 
                     f"-o /case/output/{output_filename} "
                     f"-l /case/output/zircolite.log -t /case/output/zircolite.tmp"
                 )

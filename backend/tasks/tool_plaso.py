@@ -4,12 +4,7 @@ from prefect import task
 from . import utility
 
 ## Load variables from .env file
-from dotenv import load_dotenv
-from pathlib import Path
 from os import environ as env
-dotenv_path = Path('.env')
-load_dotenv(dotenv_path=dotenv_path)
-
 
 
 @task(log_prints=True)
@@ -32,7 +27,7 @@ def run_log2timeline(input_path, analyse_output_path):
             f"--partitions all "
             f"--volumes all "
             f"--logfile /opt/report/plaso_log2timeline.log.gz "
-            f"-f /opt/plaso/src/plaso/data/filter_windows.yaml "
+            #f"-f /opt/plaso/src/plaso/data/filter_windows.yaml "
             #f"--process_memory_limit 2048 "        
             #f"--worker_memory_limit 2048 "              # The default limit is 2147483648 (2 GiB).
             f"--temporary_directory /opt/report/tmp/ "
@@ -68,7 +63,7 @@ def run_psort2json(input_path, analyse_output_path):
             f"-v {input_path}:/opt/data/timeline.plaso:ro "
             f"-v {analyse_output_path}/plaso:/opt/report "
             f"plaso psort "
-            f"--logfile /opt/report/plaso_psort.log.gz"
+            f"--logfile /opt/report/plaso_psort.log.gz "
             f"-o json_line "
             f"-w /opt/report/plaso_psort.json "
             f"--temporary_directory /opt/report/tmp/ "

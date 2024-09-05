@@ -1,12 +1,7 @@
 from prefect import task
 import hashlib, logging, os, re, shlex, subprocess
-
 ## Load variables from .env file
-from dotenv import load_dotenv
-from pathlib import Path
 from os import environ as env
-dotenv_path = Path('.env')
-load_dotenv(dotenv_path=dotenv_path)
 
 @task(log_prints=True)
 def determine_evidence_type(filename):
@@ -49,8 +44,6 @@ def unpack(input_filepath:str, output_filepath:str, password:str='', specific_fi
         #logging.info(command)
         result = subprocess.run(command, shell=True, capture_output=True, text=True)
 
-#        result = subprocess.run(command, check=True, capture_output=True, text=True)
-
         logging.info(f"output: {result.stdout}")
         if result.stderr:
             logging.error(f"error: {result.stderr}")
@@ -89,6 +82,25 @@ def move_file(filepath:str, output_filepath:str):
 
     command = [
         'mv', '-f',
+        filepath, 
+        output_filepath
+    ]        
+
+    try:
+        result = subprocess.run(command, check=True, capture_output=True, text=True)
+        print(f"output: {result.stdout}")
+        if result.stderr:
+            print(f"error: {result.stderr}")
+    except subprocess.CalledProcessError as e:
+        print(f"Error: {e.stderr}")
+        raise e
+
+@task(log_prints=True)
+def copy_file(filepath:str, output_filepath:str):
+    logging.info(f'Task copy file : starting')
+
+    command = [
+        'cp', '-f',
         filepath, 
         output_filepath
     ]        

@@ -2,13 +2,7 @@ import glob, logging, os, subprocess
 from pathlib import Path
 from prefect import task
 from . import utility
-
-from dotenv import load_dotenv
 from os import environ as env
-
-## Load variables from .env file
-dotenv_path = Path('.env')
-load_dotenv(dotenv_path=dotenv_path)
 
 
 @task(log_prints=True)
