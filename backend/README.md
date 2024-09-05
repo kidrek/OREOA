@@ -1,29 +1,15 @@
 
 # OREOA
 
+## Requirements to run OREOA
+
+```
+pip3 install -r requirements.txt
+```
+
 ## Requirements to process data
 
-Docker images : 
-
-- chainsaw
-
-```
-docker build . --no-cache --force-rm -t chainsaw -f ./dockers/chainsaw_dockerfile
-```
-
-- clamav
-
-```
-docker pull clamav/clamav:latest
-```
-
-- Zircolite 
-
-```
-docker pull wagga40/zircolite
-```
-
-- Plaso
+### Plaso
 
 ```
 docker build . --no-cache --force-rm -t plaso -f ./dockers/plaso_dockerfile
@@ -31,6 +17,25 @@ docker build . --no-cache --force-rm -t plaso -f ./dockers/plaso_dockerfile
 
 
 ## Analyse tool
+
+### Chainsaw
+
+```
+docker build . --no-cache --force-rm -t chainsaw -f ./dockers/chainsaw_dockerfile
+```
+
+### Clamav
+
+```
+docker pull clamav/clamav:latest
+```
+
+## Zircolite 
+
+```
+docker pull wagga40/zircolite
+```
+
 
 ### Timesketch
 
