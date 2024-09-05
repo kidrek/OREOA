@@ -1,30 +1,81 @@
-import logging
-from tasks import *
+import datetime, logging, os, stat
+from backend.tasks import *
+from backend.flows import flow_evidence_device, flow_evidence_folder, flow_evidence_velociraptor
+from pathlib import Path
+
+
+# Load flow from prefect
+from prefect import flow
+from prefect_dask.task_runners import DaskTaskRunner
 
 ## Load variables from .env file
-from dotenv import load_dotenv
-from pathlib import Path
 from os import environ as env
-dotenv_path = Path('.env')
-load_dotenv(dotenv_path=dotenv_path)
 
-def run(input_path, analyse_path, sanitized_filename):
+
+
+def run(input_path, analyse_path, case_id:str="case"):
     logging.info('Flow Common : Starting')
 
-    # Antivirus Analyse
-    tool_clamav.run(input_path, analyse_path)
+    # Create analyse_path
+    analyse_output_filename = f"{analyse_path}/analyse"
+    os.makedirs(f"{analyse_path}", exist_ok=True)
+    os.makedirs(f"{analyse_output_filename}", exist_ok=True)
 
-    # EVTX Analyse
-    ## ZIRCOLITE
-    tool_zircolite.zircolite_Windows(input_path, analyse_path)
-    ## Requirement : import dashboard in ElasticSearch
-    tool_elasticsearch.send_data_to_elk('send_data_to_elk', directory_path=f"{analyse_path}/zircolite", index_name="zircolite", elasticsearch_host=env["ES_HOST"], elasticsearch_user=env["ES_USER"], elasticsearch_password=env["ES_PASSWORD"])
+    if case_id == "case":
+        now = datetime.datetime.now()
+        date_time = now.strftime("%Y_%m_%d_%H%M%S")
+        case_id = f"{case_id}_{date_time}"
 
-    ## CHAINSAW
-    tool_chainsaw.run(input_path, analyse_path)
-    ## Requirement : import dashboard in ElasticSearch
-    tool_elasticsearch.send_data_to_elk('send_data_to_elk', directory_path=f"{analyse_path}/chainsaw", index_name="chainsaw", elasticsearch_host=env["ES_HOST"], elasticsearch_user=env["ES_USER"], elasticsearch_password=env["ES_PASSWORD"])
 
-    #tool_elasticsearch.add_index_pattern_to_kibana('add_index_pattern_to_kibana', kibana_host=env['KIBANA_HOST'], index_prefix='zircolite*', index_name='zircolite_test')
+    if os.path.isdir(input_path):
+        evidence_type = "folder"
+        evidence_key = Path(input_path).name
+        # Run - prefect flow / investigation_flow
+        flow_evidence_folder.investigate(input_path, analyse_output_filename)
 
-    ## Add timefield : matches.SystemTime / source : https://www.elastic.co/docs/api/doc/kibana/v8/operation/operation-createdataviewdefaultw#operation-createdataviewdefaultw-body-application-json-elastic-api-version-2023-10-31-data_view-timefieldname
+    elif stat.S_ISBLK(os.stat(input_path).st_mode):
+        evidence_type = "device"
+        evidence_key = Path(input_path).name
+        # Run - prefect flow / investigation_flow
+        flow_evidence_device.investigate(input_path, analyse_output_filename)
+
+    else:
+        if os.path.isfile(input_path):
+            evidence_type = "file"
+            original_filename = Path(input_path).name
+            original_path = Path(input_path).parent
+
+            # Sanitize name
+            sanitized_name = utility.sanitize_file_name(original_filename)
+            if original_filename != sanitized_name:
+                utility.move_file(f"{original_path}/{original_filename}", f"{original_path}/{sanitized_name}",)
+
+            # Generate Hash
+            utility.generate_hash(hash=env['HASH_ALGO'], filepath=f"{original_path}/{sanitized_name}")
+
+            # Define output and analyse folders for this artifacts
+            scan_output_filename = f"{analyse_path}/output"
+            os.makedirs(f"{scan_output_filename}", exist_ok=True)
+
+            # Determine evidence type
+            evidence_type = utility.determine_evidence_type(original_filename)
+            evidence_key = original_filename
+
+            # Handle evidence type
+            if evidence_type == "velociraptor":
+                flow_evidence_velociraptor.run(input_path = f"{original_path}/{sanitized_name}", output_path = f"{scan_output_filename}", sanitized_filename = f"{sanitized_name}" , password = env['VELOCIRAPTOR_EVIDENCE_PASSWORD'])
+
+                # Run - prefect flow / investigation_flow
+                flow_evidence_folder.investigate(scan_output_filename, analyse_output_filename)
+
+
+
+    if os.path.isdir(env['TIMESKETCH_UPLOAD_PATH']):
+        # Copy plaso file to TIMESKETCH_UPLOAD_PATH
+        utility.copy_file(f"{analyse_output_filename}/plaso/plaso_log2timeline.plaso", f"{env['TIMESKETCH_UPLOAD_PATH']}/{evidence_key}.plaso")
+
+        # TODO / Import plaso file with specific sketch name, and timeline name
+        # set sketch as case_id
+
+
+    # TODO / Generate HASH for all of analyses files
