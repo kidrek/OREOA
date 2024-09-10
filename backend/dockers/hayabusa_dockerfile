@@ -1,0 +1,41 @@
+#########################################################
+#         HAYABUSA
+#
+#
+# Création du docker 
+# docker build . -t hayabusa -f hayabusa_dockerfile
+#
+# ex url : https://github.com/Yamato-Security/hayabusa/releases/download/v2.17.0/hayabusa-2.17.0-linux-intel.zip
+#########################################################
+
+ARG PYTHON_VERSION="3.11-slim"
+
+FROM "python:${PYTHON_VERSION}"
+
+ARG HAYABUSA_INSTALL_PREFIX="/opt"
+ARG HAYABUSA_URL="https://api.github.com/repos/Yamato-Security/hayabusa/releases/latest"
+
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive \
+    apt-get install --yes --no-install-recommends \
+    curl git wget jq unzip && \
+    apt-get autoremove --purge --yes && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR "${HAYABUSA_INSTALL_PREFIX}/HAYABUSA"
+
+# Download latest version
+RUN wget `curl -sL "${HAYABUSA_URL}" | jq -r '.assets[] | select(.name? | match("-linux-intel.zip$")) | .browser_download_url'`
+
+# Decompress archive
+RUN unzip *.zip && \
+    rm -rf *.zip
+
+# Set executable permission and remove version from filename
+RUN chmod +x hayabusa-* && \
+    mv hayabusa-*-lin-x64-gnu hayabusa-lin-x64-gnu && \
+    ./hayabusa-lin-x64-gnu update-rules
+
+ENTRYPOINT ["./hayabusa-lin-x64-gnu"]
+CMD ["help"]
+
