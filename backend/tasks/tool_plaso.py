@@ -41,8 +41,8 @@ def run_log2timeline(input_path, analyse_output_path):
         if result.returncode != 0:
             logging.error(f"Error running Docker command for {input_path}: {result.stderr}")
             print(f"Error running Docker command for {input_path}: {result.stderr}")
-        else:
-            print(f"Docker command completed successfully: {result.stdout}")
+        #else:
+        #    print(f"Docker command completed successfully: {result.stdout}")
 
     except Exception as e:
         logging.error(f"An error occurred while running Zircolite: {e}")
@@ -77,8 +77,8 @@ def run_psort2json(input_path, analyse_output_path):
         if result.returncode != 0:
             logging.error(f"Error running Docker command for {input_path}: {result.stderr}")
             print(f"Error running Docker command for {input_path}: {result.stderr}")
-        else:
-            print(f"Docker command completed successfully: {result.stdout}")
+        #else:
+        #    print(f"Docker command completed successfully: {result.stdout}")
 
     except Exception as e:
         logging.error(f"An error occurred while running Zircolite: {e}")
@@ -119,8 +119,8 @@ def run_psort2elasticsearch(input_path, analyse_output_path):
         if result.returncode != 0:
             logging.error(f"Error running Docker command for {input_path}: {result.stderr}")
             print(f"Error running Docker command for {input_path}: {result.stderr}")
-        else:
-            print(f"Docker command completed successfully: {result.stdout}")
+        #else:
+        #    print(f"Docker command completed successfully: {result.stdout}")
 
     except Exception as e:
         logging.error(f"An error occurred while running Zircolite: {e}")
@@ -161,8 +161,8 @@ def run_psort2timesketch(input_path, analyse_output_path):
         if result.returncode != 0:
             logging.error(f"Error running Docker command for {input_path}: {result.stderr}")
             print(f"Error running Docker command for {input_path}: {result.stderr}")
-        else:
-            print(f"Docker command completed successfully: {result.stdout}")
+        #else:
+        #    print(f"Docker command completed successfully: {result.stdout}")
 
     except Exception as e:
         logging.error(f"An error occurred while running Zircolite: {e}")

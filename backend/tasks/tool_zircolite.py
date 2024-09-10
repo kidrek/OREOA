@@ -55,8 +55,8 @@ def zircolite_Windows(input_path, analyse_output_path):
                 if result.returncode != 0:
                     logging.error(f"Error running Docker command for {input_path}: {result.stderr}")
                     print(f"Error running Docker command for {input_path}: {result.stderr}")
-                else:
-                    print(f"Docker command completed successfully: {result.stdout}")
+                #else:
+                #    print(f"Docker command completed successfully: {result.stdout}")
 
     except Exception as e:
         logging.error(f"An error occurred while running Zircolite: {e}")
