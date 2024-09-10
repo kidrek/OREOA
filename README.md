@@ -23,7 +23,7 @@ python3 oreoa_monitor.py
 
 ```
 $ python3 oreoa.py -h
-usage: OREOA [-h] [-i INPUT_EVIDENCE] [-o OUTPUT_ANALYSE] [-c CASE]
+usage: OREOA [-h] [-i INPUT_EVIDENCE] [-o OUTPUT_ANALYSE]
 
 Tool to process and analyse forensic data
 
@@ -31,7 +31,6 @@ optional arguments:
   -h, --help            show this help message and exit
   -i INPUT_EVIDENCE, --input_evidence INPUT_EVIDENCE
   -o OUTPUT_ANALYSE, --output_analyse OUTPUT_ANALYSE
-  -c CASE, --case CASE
 
 
 
