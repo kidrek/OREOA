@@ -13,7 +13,7 @@ from os import environ as env
 
 
 
-def run(input_path, analyse_path, case_id:str="case"):
+def run(input_path, analyse_path):
     logging.info('Flow Common : Starting')
 
     # Create analyse_path
@@ -21,21 +21,13 @@ def run(input_path, analyse_path, case_id:str="case"):
     os.makedirs(f"{analyse_path}", exist_ok=True)
     os.makedirs(f"{analyse_output_filename}", exist_ok=True)
 
-    if case_id == "case":
-        now = datetime.datetime.now()
-        date_time = now.strftime("%Y_%m_%d_%H%M%S")
-        case_id = f"{case_id}_{date_time}"
-
-
     if os.path.isdir(input_path):
         evidence_type = "folder"
-        evidence_key = Path(input_path).name
         # Run - prefect flow / investigation_flow
         flow_evidence_folder.investigate(input_path, analyse_output_filename)
 
     elif stat.S_ISBLK(os.stat(input_path).st_mode):
         evidence_type = "device"
-        evidence_key = Path(input_path).name
         # Run - prefect flow / investigation_flow
         flow_evidence_device.investigate(input_path, analyse_output_filename)
 
@@ -50,32 +42,32 @@ def run(input_path, analyse_path, case_id:str="case"):
             if original_filename != sanitized_name:
                 utility.move_file(f"{original_path}/{original_filename}", f"{original_path}/{sanitized_name}",)
 
-            # Generate Hash
-            utility.generate_hash(hash=env['HASH_ALGO'], filepath=f"{original_path}/{sanitized_name}")
+    #        # Generate Hash
+    #        utility.generate_hash(hash=env['HASH_ALGO'], filepath=f"{original_path}/{sanitized_name}")
 
-            # Define output and analyse folders for this artifacts
-            scan_output_filename = f"{analyse_path}/output"
-            os.makedirs(f"{scan_output_filename}", exist_ok=True)
+    #        # Define output and analyse folders for this artifacts
+    #        scan_output_filename = f"{analyse_path}/output"
+    #        os.makedirs(f"{scan_output_filename}", exist_ok=True)
 
-            # Determine evidence type
-            evidence_type = utility.determine_evidence_type(original_filename)
-            evidence_key = original_filename
+    #        # Determine evidence type
+    #        evidence_type = utility.determine_evidence_type(original_filename)
 
-            # Handle evidence type
-            if evidence_type == "velociraptor":
-                flow_evidence_velociraptor.run(input_path = f"{original_path}/{sanitized_name}", output_path = f"{scan_output_filename}", sanitized_filename = f"{sanitized_name}" , password = env['VELOCIRAPTOR_EVIDENCE_PASSWORD'])
+    #        # Handle evidence type
+    #        if evidence_type == "velociraptor":
+    #            flow_evidence_velociraptor.run(input_path = f"{original_path}/{sanitized_name}", output_path = f"{scan_output_filename}", sanitized_filename = f"{sanitized_name}" , password = env['VELOCIRAPTOR_EVIDENCE_PASSWORD'])
 
-                # Run - prefect flow / investigation_flow
-                flow_evidence_folder.investigate(scan_output_filename, analyse_output_filename)
-
+    #            # Run - prefect flow / investigation_flow
+    #            flow_evidence_folder.investigate(scan_output_filename, analyse_output_filename)
 
 
-    if os.path.isdir(env['TIMESKETCH_UPLOAD_PATH']):
+    if os.path.isdir(env['TIMESKETCH_UPLOAD_PATH']) and os.path.isfile(f"{analyse_output_filename}/plaso/plaso_log2timeline.plaso"):
+
         # Copy plaso file to TIMESKETCH_UPLOAD_PATH
-        utility.copy_file(f"{analyse_output_filename}/plaso/plaso_log2timeline.plaso", f"{env['TIMESKETCH_UPLOAD_PATH']}/{evidence_key}.plaso")
+        utility.copy_file(f"{analyse_output_filename}/plaso/plaso_log2timeline.plaso", f"{env['TIMESKETCH_UPLOAD_PATH']}/{sanitized_name}.plaso")
 
         # TODO / Import plaso file with specific sketch name, and timeline name
         # set sketch as case_id
+        tool_timesketch.run_upload(sanitized_name)
 
 
     # TODO / Generate HASH for all of analyses files
