@@ -17,6 +17,9 @@ def investigate(input_evidence, output_analyse):
     #tool_chainsaw.run.submit(input_evidence, output_analyse)
     tool_hayabusa.run.submit(input_evidence, output_analyse)
     tool_hayabusa.run_pivot_keywords.submit(input_evidence, output_analyse)
+
+    ## Registry analyse
+    tool_regrippy.run(input_evidence, output_analyse)
         
     ## Analyse Antivirale
     #tool_clamav.run.submit(input_evidence, output_analyse)
