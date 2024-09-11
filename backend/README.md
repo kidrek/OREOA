@@ -1,7 +1,18 @@
 
 # OREOA
 
-## Requirements to process data
+
+
+## Requirements 
+
+Some python modules are required.
+
+```
+pip3 install -r requirements.txt
+```
+
+
+### Process data tools
 
 Docker images : 
 
@@ -37,9 +48,9 @@ docker build . --no-cache --force-rm -t plaso -f ./dockers/plaso_dockerfile
 ```
 
 
-## Analyse tool
+### Analyse tools
 
-### Timesketch
+#### Timesketch
 
 - Docker deployement
 ```
