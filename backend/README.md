@@ -1,15 +1,36 @@
 
 # OREOA
 
-## Requirements to run OREOA
-
-```
-pip3 install -r requirements.txt
-```
-
 ## Requirements to process data
 
-### Plaso
+Docker images : 
+
+- chainsaw
+
+```
+docker build . --no-cache --force-rm -t chainsaw -f ./dockers/chainsaw_dockerfile
+```
+
+- clamav
+
+```
+docker pull clamav/clamav:latest
+```
+
+- Hayabusa
+
+```
+docker build . --no-cache --force-rm -t hayabusa -f ./dockers/hayabusa_dockerfile
+```
+
+
+- Zircolite 
+
+```
+docker pull wagga40/zircolite
+```
+
+- Plaso
 
 ```
 docker build . --no-cache --force-rm -t plaso -f ./dockers/plaso_dockerfile
@@ -18,31 +39,38 @@ docker build . --no-cache --force-rm -t plaso -f ./dockers/plaso_dockerfile
 
 ## Analyse tool
 
-### Chainsaw
-
-```
-docker build . --no-cache --force-rm -t chainsaw -f ./dockers/chainsaw_dockerfile
-```
-
-### Clamav
-
-```
-docker pull clamav/clamav:latest
-```
-
-## Zircolite 
-
-```
-docker pull wagga40/zircolite
-```
-
-
 ### Timesketch
 
 - Docker deployement
 ```
 wget https://raw.githubusercontent.com/google/timesketch/master/contrib/deploy_timesketch.sh
 yes N | ./deploy_timesketch.sh
+```
+
+- Customisation 
+
+```
+# Download the latest tags file from blueteam0ps repo
+wget -Nq https://raw.githubusercontent.com/blueteam0ps/AllthingsTimesketch/master/tags.yaml -O /opt/timesketch/etc/timesketch/tags.yaml
+
+#Increase the CSRF token time limit
+echo -e '\nWTF_CSRF_TIME_LIMIT = 3600' >> /opt/timesketch/etc/timesketch/timesketch.conf
+
+
+# Set auto analyzer in /opt/timesketch/etc/timesketch/timesketch.conf
+AUTO_SKETCH_ANALYZERS = ["Tagger"]
+```
+
+- Start docker
+
+```
+docker-compose up
+```
+
+- Create user
+
+```
+docker-compose exec timesketch-web tsctl create-user $USER1_NAME --password $USER1_PASSWORD
 ```
 
 - Import data
