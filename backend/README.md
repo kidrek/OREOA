@@ -84,9 +84,11 @@ NOTE SEB:   echo -e 'AUTO_SKETCH_ANALYZERS = ["Tagger"]' >> ./timesketch/etc/tim
 
 ```
 ----
-NOTE SEB:   cd timesketch
+NOTE SEB:
+cd timesketch
+docker compose up -d
 ----
-docker-compose up -d
+docker-compose up
 ```
 
 - Create user
