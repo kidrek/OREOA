@@ -65,7 +65,7 @@ yes N | ./deploy_timesketch.sh
 # Download the latest tags file from blueteam0ps repo
 wget -Nq https://raw.githubusercontent.com/blueteam0ps/AllthingsTimesketch/master/tags.yaml -O /opt/timesketch/etc/timesketch/tags.yaml
 ----
-NOTE SEB:    le chemin /opt/timesketch/etc/timesketch/ n'existe pas
+NOTE SEB:    le chemin /opt/timesketch/etc/timesketch/ n'existe pas, plutot "./timesketch/etc/timesketch/tags.yaml"  ??
 ----
 
 #Increase the CSRF token time limit
