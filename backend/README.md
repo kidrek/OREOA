@@ -74,6 +74,10 @@ echo -e '\nWTF_CSRF_TIME_LIMIT = 3600' >> /opt/timesketch/etc/timesketch/timeske
 
 # Set auto analyzer in /opt/timesketch/etc/timesketch/timesketch.conf
 AUTO_SKETCH_ANALYZERS = ["Tagger"]
+-----
+NOTE SEB:   echo -e '\nAUTO_SKETCH_ANALYZERS = ["Tagger"]' >> ./timesketch/etc/timesketch/timesketch.conf
+----
+
 ```
 
 - Start docker
