@@ -55,6 +55,7 @@ docker build . --no-cache --force-rm -t plaso -f ./dockers/plaso_dockerfile
 - Docker deployement
 ```
 wget https://raw.githubusercontent.com/google/timesketch/master/contrib/deploy_timesketch.sh
+chmod +x deploy_timesketch.sh
 yes N | ./deploy_timesketch.sh
 ```
 
