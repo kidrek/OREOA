@@ -54,7 +54,7 @@ def run(input_path, analyse_path):
 
             # Handle evidence type
             if evidence_type == "velociraptor":
-                #flow_evidence_velociraptor.run(input_path = f"{original_path}/{sanitized_name}", output_path = f"{scan_output_filename}", sanitized_filename = f"{sanitized_name}" , password = env['VELOCIRAPTOR_EVIDENCE_PASSWORD'])
+                flow_evidence_velociraptor.run(input_path = f"{original_path}/{sanitized_name}", output_path = f"{scan_output_filename}", sanitized_filename = f"{sanitized_name}" , password = env['VELOCIRAPTOR_EVIDENCE_PASSWORD'])
 
                 # Run - prefect flow / investigation_flow
                 flow_evidence_folder.investigate(scan_output_filename, analyse_output_filename)
