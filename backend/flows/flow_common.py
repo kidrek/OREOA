@@ -1,4 +1,4 @@
-import datetime, logging, os, stat
+import datetime, logging, os, stat, time
 from backend.tasks import *
 from backend.flows import flow_evidence_device, flow_evidence_folder, flow_evidence_velociraptor
 from pathlib import Path
@@ -80,8 +80,12 @@ def process_result(sanitized_name, scan_output_filename, analyse_output_filename
 
         # TODO / Import plaso file with specific sketch name, and timeline name
         # set sketch as case_id
-        tool_timesketch.run_upload.submit(f"{sanitized_name}.plaso")
-        tool_timesketch.run_upload.submit(f"{sanitized_name}_hayabusa.csv")
+        tool_timesketch.run_upload(f"{sanitized_name}.plaso")
+
+        # Necessary to let the time to create sketch
+        time.sleep(2)
+
+        tool_timesketch.run_upload(f"{sanitized_name}_hayabusa.csv")
 
 
     # TODO / Generate HASH for all of analyses files
