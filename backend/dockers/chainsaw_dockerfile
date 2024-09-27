@@ -1,0 +1,42 @@
+#########################################################
+#         CHAINSAW
+#
+#
+# Création du docker 
+# docker build . -t chainsaw -f chainsaw_dockerfile
+#
+# ex url : https://github.com/WithSecureLabs/chainsaw/releases/download/v2.10.0/chainsaw_x86_64-unknown-linux-gnu.tar.gz
+#########################################################
+
+ARG PYTHON_VERSION="3.11-slim"
+
+FROM "python:${PYTHON_VERSION}"
+
+ARG CHAINSAW_INSTALL_PREFIX="/opt"
+ARG CHAINSAW_URL="https://api.github.com/repos/withsecurelabs/chainsaw/releases/latest"
+
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive \
+    apt-get install --yes --no-install-recommends \
+    curl git wget jq && \
+    apt-get autoremove --purge --yes && \
+    rm -rf /var/lib/apt/lists/*
+
+
+WORKDIR "${CHAINSAW_INSTALL_PREFIX}"
+
+RUN wget `curl -sL "${CHAINSAW_URL}" | jq -r '.assets[] | select(.name? | match("linux-gnu.tar.gz$")) | .browser_download_url'`
+
+RUN tar xvzf *.tar.gz && \
+    rm -rf *.tar.gz
+
+WORKDIR "${CHAINSAW_INSTALL_PREFIX}/"
+
+RUN git clone https://github.com/SigmaHQ/sigma /opt/sigma && \
+    git clone https://github.com/WithSecureLabs/chainsaw.git /opt/chainsaw-src
+
+WORKDIR "${CHAINSAW_INSTALL_PREFIX}/chainsaw"
+
+ENTRYPOINT ["./chainsaw"]
+CMD ["--help"]
+
