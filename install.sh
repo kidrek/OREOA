@@ -40,7 +40,9 @@ docker pull clamav/clamav:latest
 docker build . --no-cache --force-rm -t hayabusa -f ./backend/dockers/hayabusa_dockerfile
 docker pull wagga40/zircolite
 docker build . --no-cache --force-rm -t plaso -f .backend//dockers/plaso_dockerfile
-
+echo "==========="
+echo "Installing Timesketch"
+echo "==========="
 wget https://raw.githubusercontent.com/google/timesketch/master/contrib/deploy_timesketch.sh
 chmod +x deploy_timesketch.sh
 yes N | ./deploy_timesketch.sh
@@ -58,3 +60,15 @@ echo -e 'AUTO_SKETCH_ANALYZERS = ["Tagger"]' >> ./timesketch/etc/timesketch/time
 
 cd timesketch
 docker compose up -d
+
+sleep 10
+
+echo "Create timesketch user"
+docker compose exec timesketch-web tsctl create-user dfir --password dfir
+echo "Install timesketch import client"
+docker exec timesketch-worker bash -c "pip3 install timesketch-import-client"
+
+# Place plaso_log2timeline.plaso on upload folder in timesketch docker, then : 
+#cp plaso_log2timeline.plaso {TIMESKETCH_DOCKER}/upload/
+#docker exec timesketch-worker /bin/bash -c "timesketch_importer -u secubian -p secubian --host http://timesketch-web:5000 --timeline_name test --sketch_name test /usr/share/timesketch/upload/plaso_log2timeline.plaso"
+#rm -f {TIMESKETCH_DOCKER}/upload/plaso_log2timeline.plaso
