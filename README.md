@@ -1,5 +1,21 @@
 # OREOA (mOnitor aRtefacts from Evidence, prOcess and Analyse them)
 
+## Requirements
+
+```
+git clone https://github.com/kidrek/OREOA.git
+cd OREOA
+
+# Set variables
+cp .env.tpl .env
+vi .env    <-- define the values to be used by the install.sh script
+
+# Run installation
+chmod +x install.sh
+./install.sh
+```
+
+## Usage
 
 ### Monitor mode 
 
