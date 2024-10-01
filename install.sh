@@ -80,6 +80,14 @@ docker compose exec timesketch-web tsctl create-user dfir --password dfir
 echo "Install timesketch import client"
 docker exec timesketch-worker bash -c "pip3 install timesketch-import-client"
 
+
+echo "Install all python3 packages"
+if [ $DISTRIB = "debian" ]; then
+  pip3 install -r ./backend/requirements.txt --break-system-packages
+elif [ $DISTRIB = "ubuntu" ]; then
+  pip3 install -r ./backend/requirements.txt
+fi
+
 # Place plaso_log2timeline.plaso on upload folder in timesketch docker, then : 
 #cp plaso_log2timeline.plaso {TIMESKETCH_DOCKER}/upload/
 #docker exec timesketch-worker /bin/bash -c "timesketch_importer -u secubian -p secubian --host http://timesketch-web:5000 --timeline_name test --sketch_name test /usr/share/timesketch/upload/plaso_log2timeline.plaso"
