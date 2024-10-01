@@ -19,7 +19,11 @@ def run(input_path, analyse_path):
     # Create analyse_path
     analyse_output_filename = f"{analyse_path}/analyse"
     os.makedirs(f"{analyse_path}", exist_ok=True)
-    os.makedirs(f"{analyse_output_filename}", exist_ok=True)
+
+    # test
+    original_filename = Path(input_path).name
+    original_path = Path(input_path).parent
+    sanitized_name = utility.sanitize_file_name(original_filename)
 
     if os.path.isdir(input_path):
         evidence_type = "folder"
@@ -61,11 +65,11 @@ def run(input_path, analyse_path):
 
 
     # Once tools finished, process results
-    process_result(sanitized_name, scan_output_filename, analyse_output_filename)
+    process_result(sanitized_name, analyse_output_filename)
 
 
 @flow(task_runner=DaskTaskRunner(cluster_kwargs={"processes": False}))
-def process_result(sanitized_name, scan_output_filename, analyse_output_filename):
+def process_result(sanitized_name, analyse_output_filename):
     ### TODO - Création d'un workflow pour distribuer les tâches
     if os.path.isdir(env['TIMESKETCH_UPLOAD_PATH']) :
 
