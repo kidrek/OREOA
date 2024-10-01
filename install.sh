@@ -1,5 +1,7 @@
 #!/bin/bash
 
+DISTRIB=`lsb_release -i | grep 'Distributor ID:' | awk -F ":" '{print $2}' | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]'`
+
 # Fonction pour vérifier et installer un paquet
 check_install() {
     if ! command -v $1 &> /dev/null; then
@@ -10,22 +12,32 @@ check_install() {
     fi
 }
 
-# Vérifier et installer pip3
-check_install pip3
+# Vérifier et installerles prerequis
+check_install curl
+if [ $DISTRIB = "debian" ]; then
+  check_install python3
+  check_install python3-pip
+elif [ $DISTRIB = "ubuntu" ]; then
+  check_install pip3
+fi 
+
 
 # Vérifier et installer Docker
 if ! command -v docker &> /dev/null; then
     echo "Docker n'est pas installé. Installation..."
     
     # Ajout de la clé GPG et configuration du dépôt Docker
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+    curl -fsSL https://download.docker.com/linux/$DISTRIB/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/$DISTRIB $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
     
     # Installation de Docker
     sudo apt update
     sudo apt install -y docker.io docker docker-compose-plugin
+    # Initialisation du service
     sudo systemctl start docker
     sudo systemctl enable docker
+    # Ajout du compte utilisateur courant dans le groupe
+    sudo usermod -aG docker $(whoami)
 else
     echo "Docker est déjà installé."
 fi
@@ -45,8 +57,8 @@ echo "Installing Timesketch"
 echo "==========="
 wget https://raw.githubusercontent.com/google/timesketch/master/contrib/deploy_timesketch.sh
 chmod +x deploy_timesketch.sh
-yes N | ./deploy_timesketch.sh
-
+yes N | sudo ./deploy_timesketch.sh
+sudo chown -R $(id -u):$(id -g) timesketch/
 
 # Download the latest tags file from blueteam0ps repo
 wget -Nq https://raw.githubusercontent.com/blueteam0ps/AllthingsTimesketch/master/tags.yaml -O ./timesketch/etc/timesketch/tags.yaml
