@@ -2,6 +2,9 @@
 
 DISTRIB=`lsb_release -i | grep 'Distributor ID:' | awk -F ":" '{print $2}' | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]'`
 
+# Chargement des variables definies dans .env
+source .env
+
 # Fonction pour vérifier et installer un paquet
 check_install() {
     if ! command -v $1 &> /dev/null; then
@@ -76,7 +79,7 @@ docker compose up -d
 sleep 10
 
 echo "Create timesketch user"
-docker compose exec timesketch-web tsctl create-user dfir --password dfir
+docker compose exec timesketch-web tsctl create-user $TIMESKETCH_USER --password $TIMESKETCH_PASSWORD
 echo "Install timesketch import client"
 docker exec timesketch-worker bash -c "pip3 install timesketch-import-client"
 
