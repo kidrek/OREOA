@@ -39,13 +39,30 @@ if ! command -v docker &> /dev/null; then
     # Initialisation du service
     sudo systemctl start docker
     sudo systemctl enable docker
-    # Ajout du compte utilisateur courant dans le groupe
-    sudo usermod -aG docker $(whoami)
     # Recharge les groupes d appartenance du compte utilisateur
     CURRENTPATH=`pwd`; newgrp docker; cd $CURRENTPATH;
 else
     echo "Docker est déjà installé."
 fi
+
+
+# Verifier la presence du compte utilisateur dans le groupe docker
+USERNAME=$(whoami)
+GROUP="docker"
+CURRENTPATH=`pwd`
+
+if [ `cat /etc/group | grep "$GROUP" |  grep "$USERNAME" | wc -c` -eq 0 ]; then
+  # Ajout du compte utilisateur courant dans le groupe
+  echo "Ajout du compte utilisateur courant dans le groupe $GROUP."
+  sudo usermod -aG $GROUP $USERNAME
+
+  # Execution a nouveau du script d installation
+  echo "Nouvelle exécution du script avec les permissions nécessaires"
+  sg $GROUP -c "$CURRENTPATH/install.sh"
+  exit 0
+fi
+
+
 
 echo "Vérification et installation terminées."
 
