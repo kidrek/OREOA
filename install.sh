@@ -42,7 +42,7 @@ if ! command -v docker &> /dev/null; then
     # Ajout du compte utilisateur courant dans le groupe
     sudo usermod -aG docker $(whoami)
     # Recharge les groupes d appartenance du compte utilisateur
-    CURRENTPATH=`pwd`; su -l $(whoami) -c cd $CURRENTPATH
+    CURRENTPATH=`pwd`; newgrp docker; cd $CURRENTPATH;
 else
     echo "Docker est déjà installé."
 fi
