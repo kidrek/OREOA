@@ -1,13 +1,14 @@
 import glob, logging, os, subprocess
 from pathlib import Path
 from prefect import task
+
 from . import utility
 
 from os import environ as env
 
 
 # Run each SYSTEM modules
-@task(log_prints=True)
+@task(log_prints=False)
 def run_system_modules(c_root, analyse_output_path, sanitized_name):
     regrippy_system_modules = ['antivirus', 'compname', 'gpo', 'kb', 'lastloggedon', 'lastshutdown', 'localgroups', 'localusers', 'portproxy', 'printer_ports', 'regtime', 'services', 'shimcache', 'srum', 'systeminfo', 'tasks', 'teamviewer', 'timezone', 'uninstall', 'usersids', 'version']
 
@@ -23,7 +24,7 @@ def run_system_modules(c_root, analyse_output_path, sanitized_name):
 
 
 # Run each NTUSER.DAT modules
-@task(log_prints=True)
+@task(log_prints=False)
 def run_users_modules(c_root, analyse_output_path, sanitized_name):
     regrippy_user_modules = ['filedialogmru', 'keyboard', 'mndmru', 'mstscmru', 'printer_history', 'proxy', 'putty', 'rdphint', 'recentdocs', 'run', 'runmru', 'sysinternals', 'typedurls', 'userassist']
 
@@ -38,8 +39,13 @@ def run_users_modules(c_root, analyse_output_path, sanitized_name):
             print(f"Error running command : {result.stderr}")
 
 
+def find_registry(root_directory, pattern):
+  for f in root_directory.glob(f"**/**/{pattern}"):
+     if pattern in str(f):
+        return(str(f))
+
 @task(log_prints=True)
-def run(input_path, analyse_output_path):
+def run_regrippy(input_path, analyse_output_path):
     logging.info(f"Task run regrippy: {input_path}")
     os.makedirs(f"{analyse_output_path}/regrippy", exist_ok=True)
 
@@ -47,18 +53,32 @@ def run(input_path, analyse_output_path):
         logging.info(f"Starting regrippy scan for {input_path}")
 
         # Find system root dir 
-        root_system_dir = []
-        system32_dir = set(glob.glob(f"{input_path}/**/**/Windows/System32", recursive=True))
-        print(f"Results : {set(system32_dir)}")
+        root_directory_input = Path(input_path)
+        pattern = '/Windows/System32/config/SAM'
+        root_directory_windows = ''
+        registry_path = []
+        res = find_registry(root_directory_input, pattern)
+        if res != None:
+          registry_path.append(res)
+        if len(registry_path) == 0:
+          res = find_registry(root_directory_input, pattern.lower())
+          if res != None:
+            registry_path.append(res)
+        if len(registry_path) == 0:
+          res = find_registry(root_directory_input, pattern.upper())
+          if res != None:
+            registry_path.append(res)
 
         # Extract ROOT folder from system32 path
-        for folder in system32_dir:
-            root_system_dir.append(Path(folder).parent.parent)
-            
-        for folder in root_system_dir:
-            sanitized_name = utility.sanitize_file_name(str(folder))
-            run_system_modules.submit(folder, analyse_output_path, sanitized_name)
-            run_users_modules.submit(folder, analyse_output_path, sanitized_name)
+        if len(registry_path) > 0:
+          root_directory_windows = registry_path[0].lower().split(pattern.lower())[0]
+          logging.info(f'System root of Microsoft Windows : {root_directory_windows}')
+
+          sanitized_name = utility.sanitize_file_name(str(root_directory_windows))
+          logging.info(f'Task regrippy: Launch System modules')
+          run_system_modules.submit(root_directory_windows, analyse_output_path, sanitized_name)
+          logging.info(f'Task regrippy: Launch User modules')
+          run_users_modules.submit(root_directory_windows, analyse_output_path, sanitized_name)
 
 
     except Exception as e:
