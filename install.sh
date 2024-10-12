@@ -73,7 +73,7 @@ docker build . --no-cache --force-rm -t chainsaw -f ./backend/dockers/chainsaw_d
 docker pull clamav/clamav:latest
 docker build . --no-cache --force-rm -t hayabusa -f ./backend/dockers/hayabusa_dockerfile
 docker pull wagga40/zircolite
-docker build . --no-cache --force-rm -t plaso -f ./backend//dockers/plaso_dockerfile
+docker build . --no-cache --force-rm -t plaso -f ./backend/dockers/plaso_dockerfile
 echo "==========="
 echo "Installing Timesketch"
 echo "==========="
