@@ -1,56 +1,118 @@
 # OREOA (mOnitor aRtefacts from Evidence, prOcess and Analyse them)
 
-## Requirements
+OREOA is a forensic data processing and analysis tool that automates the collection, processing, and analysis of digital evidence. It integrates multiple forensic tools and provides both monitoring and manual processing capabilities.
 
-```
+## Features
+
+- Automated evidence processing pipeline
+- Support for Velociraptor collections
+- Integration with multiple analysis tools:
+  - Plaso (Timeline analysis)
+  - Hayabusa (Windows Event Log analysis)
+  - Chainsaw (Event log analysis)
+  - Zircolite (SIGMA-based detection)
+  - ClamAV (Antivirus scanning)
+  - RegRippy (Windows Registry analysis)
+- Timesketch integration for timeline visualization
+- Both monitoring and manual processing modes
+
+## Prerequisites
+
+- Linux (Debian/Ubuntu)
+- Docker and Docker Compose
+- Git
+
+## Installation
+
+1. Clone the repository:
+```bash
 git clone https://github.com/kidrek/OREOA.git
 cd OREOA
+```
 
-# Set variables
+2. Configure environment variables:
+```bash
 cp .env.tpl .env
-vi .env    <-- define the values to be used by the install.sh script
+```
 
-# Run installation
+Edit `.env` file with your configuration:
+```ini
+# Evidence Processing
+ARTIFACT_INPUT_PATH=/absolute/path/to/input
+SCAN_OUTPUT_PATH=/absolute/path/to/output
+
+# Timesketch Configuration
+TIMESKETCH_USER=your_username
+TIMESKETCH_PASSWORD=your_password
+TIMESKETCH_DEFAULT_SKETCH_NAME=default_sketch
+TIMESKETCH_UPLOAD_PATH=/path/to/upload
+
+# Evidence Settings
+VELOCIRAPTOR_EVIDENCE_PATTERN=collection-.*\.zip
+VELOCIRAPTOR_EVIDENCE_PASSWORD=your_password
+EVTX_PATTERN=.evtx,.EVTX
+HASH_ALGO=sha256
+```
+
+3. Run the installation script:
+```bash
 chmod +x install.sh
 ./install.sh
 ```
 
 ## Usage
 
-### Monitor mode 
+### Monitor Mode
 
-First of all set variables in ```.env``` file.
+Monitor mode automatically processes new evidence files as they appear in the input directory:
 
-``` .env
-# Directory monitored by this tool, to detect all new velociraptor collects stored
-ARTIFACT_INPUT_PATH={ABSOLUTE_PATH}/input
-
-# Directory where Velociraptor collects will be unarchived, process and analyse
-SCAN_OUTPUT_PATH={ABSOLUTE_PATH}/output
-```
-
-Then run script ```oreoa_monitor.py```.
-
-```
+```bash
 python3 oreoa_monitor.py
 ```
 
-### Manual mode
+### Manual Mode
+
+Process individual evidence files manually:
+
+```bash
+python3 oreoa.py -i /path/to/evidence.zip -o /path/to/output/directory
+```
+
+Options:
+- `-i, --input_evidence`: Path to the evidence file or directory
+- `-o, --output_analyse`: Path where analysis results will be stored
+
+## Output Structure
+
+The tool creates the following directory structure for each processed artifact:
 
 ```
-$ python3 oreoa.py -h
-usage: OREOA [-h] [-i INPUT_EVIDENCE] [-o OUTPUT_ANALYSE]
-
-Tool to process and analyse forensic data
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -i INPUT_EVIDENCE, --input_evidence INPUT_EVIDENCE
-  -o OUTPUT_ANALYSE, --output_analyse OUTPUT_ANALYSE
-
-
-
-# Exemple :
-
-python3 oreoa.py -i {ABSOLUTE_PATH}/input/collection-...-2024-08-12t12_36_13_02_00.zip -o {ABSOLUTE_PATH}/output/{EVIDENCE_ENDPOINT_NAME}
+output/
+└── evidence_name_extracted/
+    ├── analyse/
+    │   ├── plaso/
+    │   ├── hayabusa/
+    │   ├── chainsaw/
+    │   ├── zircolite/
+    │   ├── clamav/
+    │   └── regrippy/
+    └── output/
 ```
+
+## Integrated Tools
+
+- **Plaso**: Creates super timelines from various artifacts
+- **Hayabusa**: Advanced Windows Event Log analysis
+- **Chainsaw**: High-speed Windows Event Log analysis
+- **Zircolite**: SIGMA-based threat detection
+- **ClamAV**: Antivirus scanning
+- **RegRippy**: Windows Registry analysis
+- **Timesketch**: Timeline visualization and analysis
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit pull requests.
+
+## License
+
+This project is licensed under the MIT License.
