@@ -1,20 +1,28 @@
 #########################################################
-#         HAYABUSA
+#         HAYABUSA Dockerfile
 #
-#
-# Création du docker 
+# This Dockerfile builds the Hayabusa container.
+# To build the container, run:
 # docker build . -t hayabusa -f hayabusa_dockerfile
 #
-# ex url : https://github.com/Yamato-Security/hayabusa/releases/download/v2.17.0/hayabusa-2.17.0-linux-intel.zip
+# Example URL for Hayabusa release:
+# https://github.com/Yamato-Security/hayabusa/releases/download/v2.17.0/hayabusa-2.17.0-linux-intel.zip
 #########################################################
 
-ARG PYTHON_VERSION="3.11-slim"
+# Define the Python version to use
+ARG PYTHON_VERSION="3.12-slim"
 
+# Use the specified Python version as the base image
 FROM "python:${PYTHON_VERSION}"
 
+# Define installation prefix, Hayabusa URL, and architecture
 ARG HAYABUSA_INSTALL_PREFIX="/opt"
 ARG HAYABUSA_URL="https://api.github.com/repos/Yamato-Security/hayabusa/releases/latest"
 
+# Define the architecture to use : lin-x64-gnu, lin-aarch64-gnu, lin-x64-musl
+ARG ARCHITECTURE="lin-x64-gnu" 
+
+# Update package list and install necessary packages
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive \
     apt-get install --yes --no-install-recommends \
@@ -22,12 +30,13 @@ RUN apt-get update && \
     apt-get autoremove --purge --yes && \
     rm -rf /var/lib/apt/lists/*
 
+# Set the working directory
 WORKDIR "${HAYABUSA_INSTALL_PREFIX}/HAYABUSA"
 
-# Download latest version
-RUN wget `curl -sL "${HAYABUSA_URL}" | jq -r '.assets[] | select(.name? | match("-linux-intel.zip$")) | .browser_download_url'`
+# Download the latest Hayabusa release for the specified architecture
+RUN wget $(curl -sL "${HAYABUSA_URL}" | jq -r '.assets[] | select(.name | test("-'${ARCHITECTURE}'.zip$")) | .browser_download_url')
 
-# Decompress archive
+# Decompress the downloaded zip file and remove it
 RUN unzip *.zip && \
     rm -rf *.zip
 
@@ -36,6 +45,6 @@ RUN chmod +x hayabusa-* && \
     mv hayabusa-*-lin-x64-gnu hayabusa-lin-x64-gnu && \
     ./hayabusa-lin-x64-gnu update-rules
 
+# Define the entry point and default command for the container
 ENTRYPOINT ["./hayabusa-lin-x64-gnu"]
 CMD ["help"]
-
