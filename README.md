@@ -62,12 +62,14 @@ chmod +x install.sh
 
 ## Usage
 
+**uv** has been installed as part of the installation script and the environment has been set up with python 3.12 so you should use itto run the scripts.
+
 ### Monitor Mode
 
 Monitor mode automatically processes new evidence files as they appear in the input directory:
 
 ```bash
-python3 oreoa_monitor.py
+uv run oreoa_monitor.py
 ```
 
 ### Manual Mode
@@ -75,7 +77,7 @@ python3 oreoa_monitor.py
 Process individual evidence files manually:
 
 ```bash
-python3 oreoa.py -i /path/to/evidence.zip -o /path/to/output/directory
+uv run oreoa.py -i /path/to/evidence.zip -o /path/to/output/directory
 ```
 
 Options:
