@@ -1,15 +1,15 @@
-import argparse, logging, os
+import argparse
+import logging
 
 ## Load variables from .env file
 from dotenv import load_dotenv
 from pathlib import Path
-from os import environ as env
 dotenv_path = Path('.env')
 load_dotenv(dotenv_path=dotenv_path)
 
 
 if __name__=="__main__":
-    logging.info(f"Running daemon")
+    logging.info("Running daemon")
 
     parser = argparse.ArgumentParser(
                     prog='OREOA',
@@ -22,14 +22,12 @@ if __name__=="__main__":
     input_evidence = args.input_evidence
     output_analyse = args.output_analyse
 
-    if input_evidence and output_analyse:
-        # Load all prefect modules
-        from prefect import flow
-        from backend.tasks import *
-        from backend.flows import *
-
-        ## Start - Processing Data
-        flow_common.run(input_evidence, output_analyse)
-    else:
+    if not (input_evidence and output_analyse):
         parser.print_help()
+        exit(1)
         
+    # Load prefect modules only when needed
+    from backend.flows import flow_common
+    
+    # Start processing data
+    flow_common.run(input_evidence, output_analyse)

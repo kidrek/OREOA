@@ -1,20 +1,28 @@
 #########################################################
-#         CHAINSAW
+#         CHAINSAW Dockerfile
 #
-#
-# Création du docker 
+# This Dockerfile builds the Chainsaw container.
+# To build the container, run:
 # docker build . -t chainsaw -f chainsaw_dockerfile
 #
-# ex url : https://github.com/WithSecureLabs/chainsaw/releases/download/v2.10.0/chainsaw_x86_64-unknown-linux-gnu.tar.gz
+# Example URL for Chainsaw release:
+# https://github.com/WithSecureLabs/chainsaw/releases/download/v2.10.0/chainsaw_x86_64-unknown-linux-gnu.tar.gz
 #########################################################
 
-ARG PYTHON_VERSION="3.11-slim"
+# Define the Python version to use
+ARG PYTHON_VERSION="3.12-slim"
 
+# Use the specified Python version as the base image
 FROM "python:${PYTHON_VERSION}"
 
+# Define installation prefix, Chainsaw URL, and architecture
 ARG CHAINSAW_INSTALL_PREFIX="/opt"
 ARG CHAINSAW_URL="https://api.github.com/repos/withsecurelabs/chainsaw/releases/latest"
 
+# Define the architecture to use : x86_64, aarch64
+ARG ARCHITECTURE="x86_64"
+
+# Update package list and install necessary packages
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive \
     apt-get install --yes --no-install-recommends \
@@ -22,21 +30,26 @@ RUN apt-get update && \
     apt-get autoremove --purge --yes && \
     rm -rf /var/lib/apt/lists/*
 
-
+# Set the working directory
 WORKDIR "${CHAINSAW_INSTALL_PREFIX}"
 
-RUN wget `curl -sL "${CHAINSAW_URL}" | jq -r '.assets[] | select(.name? | match("linux-gnu.tar.gz$")) | .browser_download_url'`
+# Download the latest Chainsaw release for the specified architecture
+RUN wget `curl -sL "${CHAINSAW_URL}" | jq -r '.assets[] | select(.name? | match("'${ARCHITECTURE}'-unknown-linux-gnu.tar.gz$")) | .browser_download_url'`
 
+# Extract the downloaded tarball and remove it
 RUN tar xvzf *.tar.gz && \
     rm -rf *.tar.gz
 
+# Set the working directory
 WORKDIR "${CHAINSAW_INSTALL_PREFIX}/"
 
+# Clone the Sigma and Chainsaw repositories
 RUN git clone https://github.com/SigmaHQ/sigma /opt/sigma && \
     git clone https://github.com/WithSecureLabs/chainsaw.git /opt/chainsaw-src
 
+# Set the working directory to Chainsaw
 WORKDIR "${CHAINSAW_INSTALL_PREFIX}/chainsaw"
 
+# Define the entry point and default command for the container
 ENTRYPOINT ["./chainsaw"]
 CMD ["--help"]
-

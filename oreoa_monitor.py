@@ -17,7 +17,6 @@ class MyHandler(FileSystemEventHandler):
             logging.info(f'File {event.src_path} has been created')
 
             original_filename = Path(event.src_path).name
-            original_path = Path(event.src_path).parent
 
             # Sanitize name
             sanitized_name = utility.sanitize_file_name(original_filename)
@@ -29,7 +28,7 @@ class MyHandler(FileSystemEventHandler):
 
 # Listen any activity on ARTIFACT_INPUT_PATH directory
 if __name__=="__main__":
-    logging.info(f"Running daemon")
+    logging.info("Running daemon")
 
     # Load .env preferences
     env_path = Path('.env')
