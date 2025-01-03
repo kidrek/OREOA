@@ -1,0 +1,17 @@
+- name: Regrippy - Build image
+  community.docker.docker_image:
+    name: regrippy
+    build:
+      path: ../
+      dockerfile: dockers/regrippy_dockerfile
+    source: build
+    state: present
+
+- name: Regrippy - Build image container
+  community.docker.docker_container:
+    name: regrippy
+    image: regrippy
+    recreate: true
+    restart: no
+    restart_policy: "no"
+    state: "stopped"

@@ -1,0 +1,121 @@
+- name: "ELK | set version"
+  ansible.builtin.set_fact:
+    elk_version : "8.15.0" 
+
+- name: "Elasticsearch | Create Docker network"
+  community.docker.docker_network:
+    name: elastic
+
+## Elasticsearch installation
+- name: "Elasticsearch | Create Docker container"
+  community.docker.docker_container:
+    name: elasticsearch
+    image: "docker.elastic.co/elasticsearch/elasticsearch:{{ elk_version }}"
+    recreate: true
+    env: 
+        node.name: "elasticsearch01"
+        ES_JAVA_OPTS: "-Xms2g -Xmx2g"
+        network.host: "0.0.0.0"
+        bootstrap.memory_lock: "true"
+        discovery.type: "single-node"
+        xpack.security.enabled: "false"
+        xpack.security.enrollment.enabled: "false"
+    ports:
+      - 9200:9200
+    networks:
+      - name: "elastic"
+    ulimits: 
+      - nofile:65536:65536
+
+- name: "Elasticsearch | Wait server is up and running"
+  ansible.builtin.uri:
+    url: http://localhost:9200/_cluster/health
+    method: GET
+    return_content: yes
+  register: result
+  until: "result.status == 200"
+  retries: 10
+  delay: 60
+
+- name: "Elasticsearch | Wait server has green status"
+  ansible.builtin.uri:
+    url: http://localhost:9200/_cluster/health
+    method: GET
+    status_code: 200
+    return_content: yes
+  register: result
+  until: "result.json.status == 'green'"
+  retries: 10
+  delay: 60
+
+#- name: Print returned json dictionary
+#  debug:
+#    var: result.json.status
+
+- name: "Elasticsearch | Disable Replica for all indices"
+  become: true
+  ansible.builtin.shell: "curl -XPUT 'http://localhost:9200/_all/_settings?preserve_existing=true' -d '{\"index.number_of_replicas\" : \"0\",  \"index.number_of_shards\" : \"1\"}'"
+
+## Kibana installation
+- name: "Kibana | Create Docker container"
+  community.docker.docker_container:
+    name: kibana
+    image: "docker.elastic.co/kibana/kibana:{{ elk_version }}"
+    recreate: true
+    env:
+        ELASTICSEARCH_HOSTS: "http://elasticsearch:9200"
+        TELEMETRY_ENABLED: 'false'
+        XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY: "d1a66dfd-c4d3-4a0a-8290-2abcb83ab3aa"
+    ports:
+      - 5601:5601
+    networks:
+      - name: "elastic"
+
+- name: "Kibana | Check if container is running"
+  wait_for:
+    host: "localhost"
+    port: 5601
+
+- name: "Kibana | Wait server is up"
+  ansible.builtin.uri:
+    url: http://localhost:5601/api/licensing/info
+    method: GET
+    return_content: yes
+  register: result
+  until: "result.status == 200"
+  retries: 10
+  delay: 60
+
+- name: "Kibana | Wait server running"
+  ansible.builtin.uri:
+    url: http://localhost:5601/api/licensing/info
+    method: GET
+    status_code: 200
+    return_content: yes
+  register: result
+  until: "result.json.license.status == 'active'"
+  retries: 10
+  delay: 60
+
+## Kibana - import dashboards
+- name: "Kibana | Import dashboards"
+  ansible.builtin.shell: "for file in $(ls ../configurations/kibana/dashboards/*.ndjson);do curl -X POST 'http://localhost:5601/api/saved_objects/_import?overwrite=true' -H 'kbn-xsrf: true' --form file=@$file; done"
+
+- name: "Kibana | Set default route"
+  ansible.builtin.shell: "curl -X POST 'http://localhost:5601/internal/kibana/settings' -H 'kbn-xsrf: true' -H 'content-type: application/json' --data '{\"changes\":{\"defaultRoute\":\"/app/dashboards\"}}'"
+
+## Logstash installation
+- name: "Logstash | Create Docker container"
+  community.docker.docker_container:
+    name: logstash
+    image: "docker.elastic.co/logstash/logstash:{{ elk_version }}"
+    recreate: true
+    restart: no
+    restart_policy: "no"
+    state: "stopped"
+    env:
+        LS_JAVA_OPTS: "-Xms2g -Xmx2g"
+    networks:
+      - name: "elastic"
+    volumes:
+      - ./configurations/logstash/pipeline:/usr/share/logstash/pipeline/:ro

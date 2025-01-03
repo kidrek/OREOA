@@ -1,0 +1,17 @@
+- name: Plaso - Build image
+  community.docker.docker_image:
+    name: plaso
+    build:
+      path: ../
+      dockerfile: dockers/plaso_dockerfile
+    source: build
+    state: present
+
+- name: Plaso - Build image container
+  community.docker.docker_container:
+    name: plaso
+    image: plaso
+    recreate: true
+    restart: no
+    restart_policy: "no"
+    state: "stopped"

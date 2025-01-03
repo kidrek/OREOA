@@ -1,0 +1,17 @@
+- name: Chainsaw - Build image
+  community.docker.docker_image:
+    name: chainsaw
+    build:
+      path: ../
+      dockerfile: dockers/chainsaw_dockerfile
+    source: build
+    state: present
+
+- name: Chainsaw - Build image container
+  community.docker.docker_container:
+    name: chainsaw
+    image: chainsaw
+    recreate: true
+    restart: no
+    restart_policy: "no"
+    state: "stopped"

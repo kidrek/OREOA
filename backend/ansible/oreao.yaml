@@ -1,0 +1,31 @@
+---
+- name: OREOA
+  hosts: all
+  become: yes
+
+  vars:
+      toolsDir: "/home/{{ ansible_user }}/Documents/Tools"
+      DFIR_toolsDir: "{{ toolsDir }}/DFIR"
+      keepass_db_path: "/home/{{ ansible_user }}/Documents/oreoa.kdbx"
+      keepass_db_password: "oreoa"
+
+  tasks: 
+   - name: create directory if they don't exist
+     file:
+       path: "{{ item }}"
+       state: directory
+       owner: "{{ ansible_user }}"
+       group: "{{ ansible_user }}"
+       mode: 0775
+     loop:
+       - "{{ toolsDir }}"
+       - "{{ DFIR_toolsDir }}"
+
+   - include_tasks: tasks/keepassXC_create_db.yml
+#   - include_tasks: tasks/elk.yml
+   - include_tasks: tasks/timesketch.yml
+#
+#   - include_tasks: tasks/chainsaw.yml
+#   - include_tasks: tasks/hayabusa.yml
+#   - include_tasks: tasks/plaso.yml
+#   - include_tasks: tasks/regrippy.yml
