@@ -22,7 +22,7 @@
        - "{{ DFIR_toolsDir }}"
 
    - include_tasks: tasks/init_env.yml
-#   - include_tasks: tasks/docker.yml
+   - include_tasks: tasks/docker.yml
    - include_tasks: tasks/keepassXC_create_db.yml
    - include_tasks: tasks/elk.yml
    - include_tasks: tasks/timesketch.yml
