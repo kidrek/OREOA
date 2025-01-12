@@ -8,7 +8,7 @@
 
 The backend contains the following dockers : 
 - Chainsaw
-- Elastic Stack (Elasticsearch / Kibana with dashboards & Logstash with pipelines)
+- Elastic Stack (Elasticsearch / Kibana with dashboards & Logstash with pipelines) without authentication
 - Hayabusa
 - KeepassXC to store Timesketch password
 - Plaso
@@ -29,10 +29,18 @@ cp inventory.tpl inventory
 ansible-playbook -i inventory -K oreoa.yaml
 ```
 
+You can access in keepass database to the ```Timesketch``` informations like url/username/password. 
+These informations are also automaticaly added in ```.env``` file by Ansible during installation step.
+
+```
+keepassxc-cli show --show-protected {PATH}/oreoa.kdbx timesketch 
+# The default password of keepass database : oreoa
+```
+
 ## Workflow
 
 1. Set evidences path and output reports in .env file ;
-2. Check that ELK stack & Timesketch dockers are up and and running, if not, you can set to ```false```, EXPORT2TIMESKETCH or EXPORT2ELK variables ;
+2. Check that ELK stack & Timesketch dockers are up and and running, if not, you can set to ```false```, ```EXPORT2TIMESKETCH``` or ```EXPORT2ELK``` variables ;
 3. Start script ```oreoa.sh```
 
 ## Usage

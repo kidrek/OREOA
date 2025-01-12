@@ -1,7 +1,5 @@
 # OREOA - Initialisation
 
-
-
 ## Déploiement
 
 Les variables attendues dans le fichier ```inventory``` sont les suivantes : 
