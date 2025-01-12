@@ -6,7 +6,7 @@
   vars:
       toolsDir: "/home/{{ ansible_user }}/Documents/Tools"
       DFIR_toolsDir: "{{ toolsDir }}/DFIR"
-      keepass_db_path: "/home/{{ ansible_user }}/Documents/oreoa.kdbx"
+      keepass_db_path: "{{ DFIR_toolsDir }}/oreoa.kdbx"
       keepass_db_password: "oreoa"
 
   tasks: 
@@ -21,6 +21,8 @@
        - "{{ toolsDir }}"
        - "{{ DFIR_toolsDir }}"
 
+   - include_tasks: tasks/init_env.yml
+#   - include_tasks: tasks/docker.yml
    - include_tasks: tasks/keepassXC_create_db.yml
    - include_tasks: tasks/elk.yml
    - include_tasks: tasks/timesketch.yml

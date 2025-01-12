@@ -1,0 +1,6 @@
+- name: "Env - Set environment variables based on template"
+  become_user: "{{ ansible_user }}"
+  ansible.builtin.copy:
+    src: ../../.env.tpl
+    dest: ../../.env
+    mode: '0700'

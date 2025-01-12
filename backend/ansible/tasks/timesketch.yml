@@ -176,6 +176,20 @@
   register: result
   ignore_errors: False
 
+- name: "Timesketch | Set environment variables"
+  become_user: "{{ ansible_user }}"
+  lineinfile:
+    dest: "../../.env"
+    line: "{{ item.name }}={{ item.value }}"
+    regexp: "^{{ item.name }}="
+  loop:
+      - { name: "timesketch_user", value: "\"{{ ansible_user }}\"" }
+      - { name: "timesketch_password", value: "\"{{ password }}\"" }
+      - { name: "timesketch_upload_path", value: "\"{{ DFIR_toolsDir }}/timesketch/timesketch/upload\"" }
+      - { name: "timesketch_sketch_id", value: "1"}
+  when: 
+    - arch == "amd64"
+
 - name: "Timesketch | Create user"
   become_user: "{{ ansible_user }}"
   ansible.builtin.shell: sleep 30; cd {{ DFIR_toolsDir }}/timesketch/timesketch; sudo docker-compose exec timesketch-web tsctl create-user {{ ansible_user }} --password {{ password }};
