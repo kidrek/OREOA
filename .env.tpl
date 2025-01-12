@@ -1,9 +1,12 @@
-ARTIFACT_INPUT_PATH=/{ABSOLUTE_PATH}/artifacts_input   # Ne pas spécifier le dernier /
-SCAN_OUTPUT_PATH=/{ABSOLUTE_PATH}/scans_output         # Ne pas spécifier le dernier /
-OS="windows"         # Kind of operating system (linux, macos, windows)
+input_path=/{ABSOLUTE_PATH}/artifacts_input       # Ne pas spécifier le dernier /
+output_path=/{ABSOLUTE_PATH}/scans_output         # Ne pas spécifier le dernier /
+os="windows"
 HASH_ALGO="sha256"
+## ELK INSTANCE
+EXPORT2ELK=true
 ## TIMESKETCH INSTANCE
-TIMESKETCH_DEFAULT_SKETCH_NAME="default"
-TIMESKETCH_USER="admin"
-TIMESKETCH_PASSWORD="admin"
-TIMESKETCH_UPLOAD_PATH="/{ABSOLUTE_PATH}/{TIMESKETCH_DOCKER}/upload"
+EXPORT2TIMESKETCH=true
+timesketch_sketch_id={SKETCH_ID}                # Need to be created on webpage
+timesketch_user="{USER}"
+timesketch_password="{PASSWORD}"
+timesketch_upload_path="{TIMESKETCH_INSTALLATION_PATH}/upload"
