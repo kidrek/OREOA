@@ -1,4 +1,4 @@
-- name: "Hayabusa | Stop ands remove old container"
+- name: "Hayabusa - Stop ands remove old container"
   docker_container:
     name: "hayabusa"
     state: absent
