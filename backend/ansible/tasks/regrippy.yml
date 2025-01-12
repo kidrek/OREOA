@@ -1,3 +1,10 @@
+- name: "Regrippy - Stop ands remove old container"
+  docker_container:
+    name: "regrippy"
+    state: absent
+    restart_policy: no
+  ignore_errors: True
+
 - name: Regrippy - Build image
   community.docker.docker_image:
     name: regrippy

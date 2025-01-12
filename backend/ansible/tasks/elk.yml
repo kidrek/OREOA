@@ -6,6 +6,19 @@
   community.docker.docker_network:
     name: elastic
 
+## Remove previous installation
+- name: "ELK | Stop ands remove old containers"
+  docker_container:
+    name: "{{ item }}"
+    state: absent
+    restart_policy: no
+  loop:
+    - "elasticsearch"
+    - "kibana"
+    - "logstash"
+  ignore_errors: True
+
+
 ## Elasticsearch installation
 - name: "Elasticsearch | Create Docker container"
   community.docker.docker_container:
@@ -99,23 +112,41 @@
 
 ## Kibana - import dashboards
 - name: "Kibana | Import dashboards"
-  ansible.builtin.shell: "for file in $(ls ../configurations/kibana/dashboards/*.ndjson);do curl -X POST 'http://localhost:5601/api/saved_objects/_import?overwrite=true' -H 'kbn-xsrf: true' --form file=@$file; done"
+  ansible.builtin.shell: "for file in $(ls ../dockers/configurations/kibana/dashboards/*.ndjson);do curl -X POST 'http://localhost:5601/api/saved_objects/_import?overwrite=true' -H 'kbn-xsrf: true' --form file=@$file; done"
 
 - name: "Kibana | Set default route"
   ansible.builtin.shell: "curl -X POST 'http://localhost:5601/internal/kibana/settings' -H 'kbn-xsrf: true' -H 'content-type: application/json' --data '{\"changes\":{\"defaultRoute\":\"/app/dashboards\"}}'"
 
 ## Logstash installation
-- name: "Logstash | Create Docker container"
+#- name: "Logstash | Create Docker container"
+#  community.docker.docker_container:
+#    name: logstash
+#    image: "docker.elastic.co/logstash/logstash:{{ elk_version }}"
+#    recreate: true
+#    restart: no
+#    restart_policy: "no"
+#    state: "stopped"
+#    env:
+#        LS_JAVA_OPTS: "-Xms2g -Xmx2g"
+#    networks:
+#      - name: "elastic"
+#    volumes:
+#      - ./configurations/logstash/pipeline:/usr/share/logstash/pipeline/:ro
+
+- name: "Logstash | Build image"
+  community.docker.docker_image:
+    name: logstash
+    build:
+      path: ../
+      dockerfile: dockers/logstash_dockerfile
+    source: build
+    state: present
+
+- name: Logstash - Build container
   community.docker.docker_container:
     name: logstash
-    image: "docker.elastic.co/logstash/logstash:{{ elk_version }}"
+    image: logstash
     recreate: true
     restart: no
     restart_policy: "no"
     state: "stopped"
-    env:
-        LS_JAVA_OPTS: "-Xms2g -Xmx2g"
-    networks:
-      - name: "elastic"
-    volumes:
-      - ./configurations/logstash/pipeline:/usr/share/logstash/pipeline/:ro

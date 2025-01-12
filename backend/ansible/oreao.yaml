@@ -22,10 +22,10 @@
        - "{{ DFIR_toolsDir }}"
 
    - include_tasks: tasks/keepassXC_create_db.yml
-#   - include_tasks: tasks/elk.yml
+   - include_tasks: tasks/elk.yml
    - include_tasks: tasks/timesketch.yml
-#
-#   - include_tasks: tasks/chainsaw.yml
-#   - include_tasks: tasks/hayabusa.yml
-#   - include_tasks: tasks/plaso.yml
-#   - include_tasks: tasks/regrippy.yml
+
+   - include_tasks: tasks/chainsaw.yml
+   - include_tasks: tasks/hayabusa.yml
+   - include_tasks: tasks/plaso.yml
+   - include_tasks: tasks/regrippy.yml

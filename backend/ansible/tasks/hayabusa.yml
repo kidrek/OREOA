@@ -1,3 +1,10 @@
+- name: "Hayabusa | Stop ands remove old container"
+  docker_container:
+    name: "hayabusa"
+    state: absent
+    restart_policy: no
+  ignore_errors: True
+
 - name: Hayabusa - Build image
   community.docker.docker_image:
     name: hayabusa

@@ -1,3 +1,10 @@
+- name: "Plaso - Stop ands remove old container"
+  docker_container:
+    name: "plaso"
+    state: absent
+    restart_policy: no
+  ignore_errors: True
+
 - name: Plaso - Build image
   community.docker.docker_image:
     name: plaso
