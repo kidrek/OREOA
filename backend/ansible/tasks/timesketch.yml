@@ -1,12 +1,11 @@
-
 - name: "Timesketch | Check if folder exists"
   stat:
-    path: "{{ DFIR_toolsDir }}/timesketch"
+    path: "{{ timesketchDir }}"
   register: timesketchDirectory
   when: arch == "amd64"
 
 ## Remove previous installation
-- name: "Timesketch | Stop ands remove old containers"
+- name: "Timesketch | Stop and remove old containers"
   docker_container:
     name: "{{ item }}"
     state: absent
@@ -26,7 +25,7 @@
 
 - name: "Timesketch | Remove old folder"
   file:
-    path: "{{ DFIR_toolsDir }}/timesketch"
+    path: "{{ timesketchDir }}"
     state: absent
   when: 
     - arch == "amd64"
@@ -36,7 +35,7 @@
 - name: "Timesketch | Create folder"
   become_user: "{{ ansible_user }}"
   file:
-    path: "{{ DFIR_toolsDir }}/timesketch"
+    path: "{{ timesketchDir }}"
     state: directory
     owner: "{{ ansible_user }}"
     group: "{{ ansible_user }}"
@@ -47,21 +46,21 @@
   become_user: "{{ ansible_user }}"
   ansible.builtin.get_url:
     url: https://raw.githubusercontent.com/google/timesketch/master/contrib/deploy_timesketch.sh
-    dest: "{{ DFIR_toolsDir }}/timesketch/deploy_timesketch.sh"
+    dest: "{{ timesketchDir }}/deploy_timesketch.sh"
     mode: 0755 
   when: 
     - arch == "amd64"
 
 - name: "Timesketch | Execute deploy script"
   become_user: "{{ ansible_user }}"
-  ansible.builtin.shell: cd {{ DFIR_toolsDir }}/timesketch; yes N | sudo ./deploy_timesketch.sh;
+  ansible.builtin.shell: cd {{ timesketchDir }}; yes N | sudo ./deploy_timesketch.sh;
   when: 
     - arch == "amd64"
 
 - name: "Timesketch | Change ownership"
   ansible.builtin.file:
     state: directory
-    path: "{{ DFIR_toolsDir }}/timesketch"
+    path: "{{ timesketchDir }}"
     owner: "{{ ansible_user }}"
     group: "{{ ansible_user }}"
     recurse: yes
@@ -71,7 +70,7 @@
 - name: "Timesketch | modify memory usage"
   become_user: "{{ ansible_user }}"
   lineinfile:
-    dest: "{{ DFIR_toolsDir }}/timesketch/timesketch/config.env"
+    dest: "{{ timesketchDir }}/timesketch/config.env"
     line: 'OPENSEARCH_MEM_USE_GB=4'
     regexp: "^OPENSEARCH_MEM_USE_GB="
   when: 
@@ -80,7 +79,7 @@
 - name: "Timesketch | modify HTTPS TCP Port"
   become_user: "{{ ansible_user }}"
   lineinfile:
-    dest: "{{ DFIR_toolsDir }}/timesketch/timesketch/config.env"
+    dest: "{{ timesketchDir }}/timesketch/config.env"
     line: 'NGINX_HTTPS_PORT=5443'
     regexp: "^NGINX_HTTPS_PORT="
   when: 
@@ -89,7 +88,7 @@
 - name: "Timesketch | modify HTTP TCP Port"
   become_user: "{{ ansible_user }}"
   lineinfile:
-    dest: "{{ DFIR_toolsDir }}/timesketch/timesketch/config.env"
+    dest: "{{ timesketchDir }}/timesketch/config.env"
     line: 'NGINX_HTTP_PORT=5080'
     regexp: "^NGINX_HTTP_PORT="
   when: 
@@ -98,7 +97,7 @@
 - name: "Timesketch | Increase the CSRF token time limit"
   become_user: "{{ ansible_user }}"
   lineinfile:
-    dest: "{{ DFIR_toolsDir }}/timesketch/timesketch/etc/timesketch/timesketch.conf"
+    dest: "{{ timesketchDir }}/timesketch/etc/timesketch/timesketch.conf"
     line: 'WTF_CSRF_TIME_LIMIT = 3600'
     regexp: "^WTF_CSRF_TIME_LIMIT ="
   when: 
@@ -108,7 +107,7 @@
   become_user: "{{ ansible_user }}"
   ansible.builtin.get_url:
     url: https://raw.githubusercontent.com/kidrek/AllthingsTimesketch/refs/heads/master/tags.yaml
-    dest: "{{ DFIR_toolsDir }}/timesketch/timesketch/etc/timesketch/tags.yaml"
+    dest: "{{ timesketchDir }}/timesketch/etc/timesketch/tags.yaml"
     mode: 0644
     force: true
   when: 
@@ -116,7 +115,7 @@
 
 - name: "Timesketch | Start docker"
   become_user: "{{ ansible_user }}"
-  ansible.builtin.shell: cd {{ DFIR_toolsDir }}/timesketch/timesketch; sudo docker-compose up -d;
+  ansible.builtin.shell: cd {{ timesketchDir }}/timesketch; sudo docker-compose up -d;
   when: 
     - arch == "amd64"
 
@@ -124,6 +123,23 @@
   wait_for:
     host: "127.0.0.1"
     port: 5080
+  when: 
+    - arch == "amd64"
+
+- name: "Timesketch | Start all containers"
+  docker_container:
+    name: "{{ item }}"
+    state: started
+    restart: yes
+    restart_policy: no
+  loop:
+    - "timesketch-web"
+    - "timesketch-web-legacy"
+    - "timesketch-worker"
+    - "opensearch"
+    - "postgres"
+    - "redis"
+    - "nginx"
   when: 
     - arch == "amd64"
 
@@ -143,7 +159,7 @@
 #  ansible.builtin.copy: 
 #    src: "{{ item.path }}"
 #    remote_src: yes
-#    dest: "{{ DFIR_toolsDir }}/timesketch/timesketch/etc/timesketch/sigma/rules/"
+#    dest: "{{ timesketchDir }}/timesketch/etc/timesketch/sigma/rules/"
 #  with_items:
 #    - "{{rulefiles.files}}"
 #  when: 
@@ -185,14 +201,14 @@
   loop:
       - { name: "timesketch_user", value: "\"{{ ansible_user }}\"" }
       - { name: "timesketch_password", value: "\"{{ password }}\"" }
-      - { name: "timesketch_upload_path", value: "\"{{ DFIR_toolsDir }}/timesketch/timesketch/upload\"" }
+      - { name: "timesketch_upload_path", value: "\"./{{ toolsDir }}/timesketch/timesketch/upload\"" }
       - { name: "timesketch_sketch_id", value: "1"}
   when: 
     - arch == "amd64"
 
 - name: "Timesketch | Create user"
   become_user: "{{ ansible_user }}"
-  ansible.builtin.shell: sleep 30; cd {{ DFIR_toolsDir }}/timesketch/timesketch; sudo docker-compose exec timesketch-web tsctl create-user {{ ansible_user }} --password {{ password }};
+  ansible.builtin.shell: sleep 30; cd {{ timesketchDir }}/timesketch; sudo docker-compose exec timesketch-web tsctl create-user {{ ansible_user }} --password {{ password }};
   when: 
     - arch == "amd64"
 
@@ -202,13 +218,13 @@
 #docker exec timesketch-worker bash -c "rm -f /root/.timesketch.token
 - name: "Timesketch | timesketch-import-client python module installation"
   become_user: "{{ ansible_user }}"
-  ansible.builtin.shell: cd {{ DFIR_toolsDir }}/timesketch/timesketch; sudo docker-compose exec timesketch-worker bash -c "pip3 install timesketch-import-client"
+  ansible.builtin.shell: cd {{ timesketchDir }}/timesketch; sudo docker-compose exec timesketch-worker bash -c "pip3 install timesketch-import-client"
   when: 
     - arch == "amd64"
 
 - name: "Timesketch | remove old timesketch session handle"
   become_user: "{{ ansible_user }}"
-  ansible.builtin.shell: cd {{ DFIR_toolsDir }}/timesketch/timesketch; sudo docker-compose exec timesketch-worker bash -c "rm -f /root/.timesketchrc; rm -f /root/.timesketch.token"
+  ansible.builtin.shell: cd {{ timesketchDir }}/timesketch; sudo docker-compose exec timesketch-worker bash -c "rm -f /root/.timesketchrc; rm -f /root/.timesketch.token"
   when: 
     - arch == "amd64"
 

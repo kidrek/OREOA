@@ -4,9 +4,9 @@
   become: yes
 
   vars:
-      toolsDir: "/home/{{ ansible_user }}/Documents/Tools"
-      DFIR_toolsDir: "{{ toolsDir }}/DFIR"
-      keepass_db_path: "{{ DFIR_toolsDir }}/oreoa.kdbx"
+      toolsDir: "oreoa_deployed"
+      timesketchDir: "../../{{ toolsDir }}/timesketch"
+      keepass_db_path: "../../{{toolsDir}}/oreoa.kdbx"
       keepass_db_password: "oreoa"
 
   tasks: 
@@ -18,8 +18,7 @@
        group: "{{ ansible_user }}"
        mode: 0775
      loop:
-       - "{{ toolsDir }}"
-       - "{{ DFIR_toolsDir }}"
+       - "../../{{ toolsDir }}"
 
    - include_tasks: tasks/init_env.yml
    - include_tasks: tasks/docker.yml
@@ -31,3 +30,5 @@
    - include_tasks: tasks/hayabusa.yml
    - include_tasks: tasks/plaso.yml
    - include_tasks: tasks/regrippy.yml
+   - include_tasks: tasks/takajo.yml
+   - include_tasks: tasks/zircolite.yml
