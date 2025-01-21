@@ -1,0 +1,24 @@
+- name: "Zircolite - Stop ands remove old container"
+  docker_container:
+    name: "zircolite"
+    state: absent
+    restart_policy: no
+  ignore_errors: True
+
+- name: Zircolite - Build image
+  community.docker.docker_image:
+    name: zircolite
+    build:
+      path: ../
+      dockerfile: dockers/zircolite_dockerfile
+    source: build
+    state: present
+
+- name: Zircolite - Build image container
+  community.docker.docker_container:
+    name: zircolite
+    image: zircolite
+    recreate: true
+    restart: no
+    restart_policy: "no"
+    state: "stopped"
