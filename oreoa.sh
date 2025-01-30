@@ -23,6 +23,9 @@ run_zircolite() {
 	-v $output_path/zircolite:/opt/report \
 	zircolite \
 	--evtx /opt/data \
+	-t /opt/report/tmp \
+	--debug \
+	-l /opt/report/log \
 	--ruleset rules/rules_windows_sysmon_pysigma.json \
 	--template templates/exportForELK.tmpl \
 	--templateOutput /opt/report/exportForELK_sysmon.json \
@@ -310,9 +313,9 @@ generate_hashes() {
 }
 
 
-# Step 1 - run zircolite
-run_zircolite
-sleep 5
+# Step 1 - run zircolite -- Disabled by default / Issue with the high numbers of evtx files
+#run_zircolite
+#sleep 5
 
 # Step 2 - run hayabusa
 run_hayabusa
@@ -322,9 +325,9 @@ sleep 5
 run_takajo
 sleep 5
 
-# Step 4 - run chainsaw
-run_chainsaw
-sleep 5
+# Step 4 - run chainsaw -- Disabled by default / Stay stuck without error
+#run_chainsaw
+#sleep 5
 
 # Step 5 - run plaso
 run_plaso
