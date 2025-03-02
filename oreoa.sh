@@ -16,49 +16,94 @@ run_zircolite() {
 	$IMAGE \
 	$COMMAND
 
+	# Zircolite - Create a new report folder
+	IMAGE="alpine:latest"
+	COMMAND="/bin/mkdir /opt/report/zircolite"
+	docker pull $IMAGE
+	docker run --rm \
+	-v $output_path:/opt/report \
+	--name dfirtools \
+	$IMAGE \
+	$COMMAND
 
-	# Zircolite - Generate sysmon report
-	docker run --rm --tty \
-	-v $input_path:/opt/data:ro \
-	-v $output_path/zircolite:/opt/report \
-	zircolite \
-	--evtx /opt/data \
-	-t /opt/report/tmp \
-	--debug \
-	-l /opt/report/log \
-	--ruleset rules/rules_windows_sysmon_pysigma.json \
-	--template templates/exportForELK.tmpl \
-	--templateOutput /opt/report/exportForELK_sysmon.json \
-	--template templates/exportForTimesketch.tmpl \
-	--templateOutput /opt/report/exportForTimesketch_sysmon.json 
+	# Zircolite - Retrieve evtx files and rename all files with space
+	IMAGE="alpine:latest"
+	docker pull $IMAGE
+	docker run --rm \
+		-v $input_path:/opt/data \
+		--name dfirtools \
+		$IMAGE \
+		/bin/sh -c "find /opt/data -type f -name '* *.evtx' -exec sh -c 'mv \"\$0\" \"\${0// /_}\"' {} \;" 
 
-	# Zircolite - Generate generic report
-	docker run --rm --tty \
-	-v $input_path:/opt/data:ro \
-	-v $output_path/zircolite:/opt/report \
-	zircolite \
-	--evtx /opt/data \
-	--ruleset rules/rules_windows_generic_pysigma.json \
-	--template templates/exportForELK.tmpl \
-	--templateOutput /opt/report/exportForELK_generic.json \
-	--template templates/exportForTimesketch.tmpl \
-	--templateOutput /opt/report/exportForTimesketch_generic.json 
+	# Zircolite - Retrieve evtx files list
+	IMAGE="alpine:latest"
+	COMMAND="apk add parallel; find $input_path -type f -name '*.evtx' | parallel -j -1 --progress echo {} | tee /output/zircolite/events_filepath.log"
+	docker pull $IMAGE
+	docker run --rm \
+		-v $input_path:$input_path \
+		-v $output_path:/output \
+		--name dfirtools \
+		$IMAGE \
+		/bin/sh -c "$COMMAND"
 
+
+	for file in `cat $output_path/zircolite/events_filepath.log` 
+	do
+		evtx_path=$file
+		evtx_name=`basename $file`
+		echo $evtx_path
+
+		# Zircolite - Generate sysmon report
+		docker run --rm --tty \
+		-v "$evtx_path":"/opt/data/$evtx_name":ro \
+		-v $output_path/zircolite:/opt/report \
+		zircolite \
+		--evtx "/opt/data/$evtx_name" \
+		-t /opt/report/tmp \
+		--debug \
+		-l /opt/report/log \
+		--ruleset rules/rules_windows_sysmon_pysigma.json \
+		--template templates/exportForELK.tmpl \
+		--templateOutput "/opt/report/exportForELK_sysmon_$evtx_name.json" \
+		--template templates/exportForTimesketch.tmpl \
+		--templateOutput "/opt/report/exportForTimesketch_sysmon_$evtx_name.json" 
+	done
+
+
+	for file in `cat $output_path/zircolite/events_filepath.log` 
+	do
+		evtx_path=$file
+		evtx_name=`basename $file`
+		# Zircolite - Generate sysmon report
+		docker run --rm --tty \
+		-v $evtx_path:/opt/data/$evtx_name:ro \
+		-v $output_path/zircolite:/opt/report \
+		zircolite \
+		--evtx /opt/data/$evtx_name \
+		-t /opt/report/tmp \
+		--debug \
+		-l /opt/report/log \
+		--ruleset rules/rules_windows_generic_pysigma.json \
+		--template templates/exportForELK.tmpl \
+		--templateOutput /opt/report/exportForELK_generic_$evtx_name.json \
+		--template templates/exportForTimesketch.tmpl \
+		--templateOutput /opt/report/exportForTimesketch_generic_$evtx_name.json 
+	done
 
 	if $EXPORT2ELK ; then 
-	# Zircolite - Import result in ELK stack
-	COMMAND="logstash -f /usr/share/logstash/pipeline/zircolite.conf"
-	docker run \
-		--network=elastic \
-		-v $output_path/zircolite:/opt/data/ \
-		logstash \
-		$COMMAND
+		# Zircolite - Import result in ELK stack
+		COMMAND="logstash -f /usr/share/logstash/pipeline/zircolite.conf"
+		docker run \
+			--network=elastic \
+			-v $output_path/zircolite:/opt/data/ \
+			logstash \
+			$COMMAND
 
-	# Zircolite - Set replicas to 0
-	docker run --rm \
-		--network=elastic \
-		logstash \
-		curl -XPUT http://elasticsearch:9200/zircolite/_settings -d '{"index":{"refresh_interval":"-1", "number_of_replicas":0}}' -H "Content-Type: application/json"
+		# Zircolite - Set replicas to 0
+		docker run --rm \
+			--network=elastic \
+			logstash \
+			curl -XPUT http://elasticsearch:9200/zircolite/_settings -d '{"index":{"refresh_interval":"-1", "number_of_replicas":0}}' -H "Content-Type: application/json"
 	fi
 }
 
@@ -313,15 +358,15 @@ generate_hashes() {
 }
 
 
-# Step 1 - run zircolite -- Disabled by default / Issue with the high numbers of evtx files
-#run_zircolite
-#sleep 5
+## Step 1 - run zircolite -- Disabled by default / Issue with the high numbers of evtx files
+run_zircolite
+sleep 5
 
-# Step 2 - run hayabusa
+# Step 2 - run hayabusa [WORKS WELL]
 run_hayabusa
 sleep 5
 
-# Step 3 - run takajo
+## Step 3 - run takajo  [WORKS WELL]
 run_takajo
 sleep 5
 
@@ -333,7 +378,7 @@ sleep 5
 run_plaso
 sleep 5
 
-# Step 6 - generate hashes
+## Step 6 - generate hashes
 generate_hashes
 sleep 5
 
