@@ -26,15 +26,6 @@ run_zircolite() {
 	$IMAGE \
 	$COMMAND
 
-	# Zircolite - Retrieve evtx files and rename all files with space
-	IMAGE="alpine:latest"
-	docker pull $IMAGE
-	docker run --rm \
-		-v $input_path:/opt/data \
-		--name dfirtools \
-		$IMAGE \
-		/bin/sh -c "find /opt/data -type f -name '* *.evtx' -exec sh -c 'mv \"\$0\" \"\${0// /_}\"' {} \;" 
-
 	# Zircolite - Retrieve evtx files list
 	IMAGE="alpine:latest"
 	COMMAND="apk add parallel; find $input_path -type f -name '*.evtx' | parallel -j -1 --progress echo {} | tee /output/zircolite/events_filepath.log"
@@ -76,18 +67,18 @@ run_zircolite() {
 		evtx_name=`basename $file`
 		# Zircolite - Generate sysmon report
 		docker run --rm --tty \
-		-v $evtx_path:/opt/data/$evtx_name:ro \
-		-v $output_path/zircolite:/opt/report \
-		zircolite \
-		--evtx /opt/data/$evtx_name \
-		-t /opt/report/tmp \
-		--debug \
-		-l /opt/report/log \
-		--ruleset rules/rules_windows_generic_pysigma.json \
-		--template templates/exportForELK.tmpl \
-		--templateOutput /opt/report/exportForELK_generic_$evtx_name.json \
-		--template templates/exportForTimesketch.tmpl \
-		--templateOutput /opt/report/exportForTimesketch_generic_$evtx_name.json 
+			-v $evtx_path:/opt/data/$evtx_name:ro \
+			-v $output_path/zircolite:/opt/report \
+			zircolite \
+			--evtx /opt/data/$evtx_name \
+			-t /opt/report/tmp \
+			--debug \
+			-l /opt/report/log \
+			--ruleset rules/rules_windows_generic_pysigma.json \
+			--template templates/exportForELK.tmpl \
+			--templateOutput /opt/report/exportForELK_generic_$evtx_name.json \
+			--template templates/exportForTimesketch.tmpl \
+			--templateOutput /opt/report/exportForTimesketch_generic_$evtx_name.json 
 	done
 
 	if $EXPORT2ELK ; then 
@@ -356,6 +347,15 @@ generate_hashes() {
 	  $IMAGE \
 	  sh -c "$COMMAND"
 }
+
+## Step 00 - Retrieve evtx files and rename all files with space
+IMAGE="alpine:latest"
+docker pull $IMAGE
+docker run --rm \
+	-v $input_path:/opt/data \
+	--name dfirtools \
+	$IMAGE \
+	/bin/sh -c "find /opt/data -type f -name '* *.evtx' -exec sh -c 'mv \"\$0\" \"\${0// /_}\"' {} \;" 
 
 
 ## Step 1 - run zircolite -- Disabled by default / Issue with the high numbers of evtx files
