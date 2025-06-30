@@ -3,10 +3,8 @@
 #
 # This Dockerfile builds the Hayabusa container.
 # To build the container, run:
-# docker build . -t hayabusa -f hayabusa_dockerfile
+# docker build . -t regrippy -f regrippy_dockerfile --no-cache
 #
-# Example URL for Hayabusa release:
-# https://github.com/Yamato-Security/hayabusa/releases/download/v2.17.0/hayabusa-2.17.0-linux-intel.zip
 #########################################################
 
 # Define the Python version to use
@@ -15,9 +13,9 @@ ARG PYTHON_VERSION="3.8"
 # Use the specified Python version as the base image
 FROM "python:${PYTHON_VERSION}"
 
-ENV DEBIAN_FRONTEND=noninteractive
 # Combining the apt-get commands into a single run reduces the size of the resulting image.
 # The apt-get installations below are interdependent and need to be done in sequence.
+ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get -y update && \
     apt-get -y upgrade && \
     apt install -y git-core python3-setuptools && \
