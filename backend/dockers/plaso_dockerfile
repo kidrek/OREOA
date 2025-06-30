@@ -1,18 +1,22 @@
+#########################################################
+#         Plaso Dockerfile
+#
+# This Dockerfile builds the Plaso container.
+# To build the container, run:
+# docker build . -t plaso -f plaso_dockerfile --no-cache
+#
+# To Run log2timeline on artifacts stored in /data/artifacts with:
+# docker run -ti --user $(id -u):$(id -g) -v <ARTEFACT>:/data:ro -v <REPORT_DIR>:/report plaso log2timeline -z UTC --storage_file /opt/report/log2timeline.plaso --partitions all --volumes all  --temporary_directory /opt/report/tmp/ /opt/data 
+#########################################################
+
 FROM ubuntu:noble
 LABEL maintainer="Log2Timeline <log2timeline-dev@googlegroups.com>"
 
-# Create container with:
-# docker build . --no-cache --force-rm -t plaso -f ./dockers/plaso_dockerfile
-
-# Run log2timeline on artifacts stored in /data/artifacts with:
-# docker run -ti --user $(id -u):$(id -g) -v <ARTEFACT>:/data:ro -v <REPORT_DIR>:/report plaso log2timeline -z UTC --storage_file /opt/report/log2timeline.plaso --partitions all --volumes all  --temporary_directory /opt/report/tmp/ /opt/data 
-
 ARG PPA_TRACK=dev
-
-ENV DEBIAN_FRONTEND=noninteractive
 
 # Combining the apt-get commands into a single run reduces the size of the resulting image.
 # The apt-get installations below are interdependent and need to be done in sequence.
+ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get -y update && \
     apt-get -y install apt-transport-https apt-utils && \
     apt-get -y install libterm-readline-gnu-perl software-properties-common
