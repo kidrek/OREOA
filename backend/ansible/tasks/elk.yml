@@ -2,6 +2,12 @@
   ansible.builtin.set_fact:
     elk_version : "8.15.0" 
 
+
+- name: Install requirements
+  apt:
+    name: 
+      - curl
+
 - name: "Elasticsearch | Create Docker network"
   community.docker.docker_network:
     name: elastic
