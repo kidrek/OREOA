@@ -3,7 +3,7 @@
 #
 # This Dockerfile builds the Chainsaw container.
 # To build the container, run:
-# docker build . -t chainsaw -f chainsaw_dockerfile
+# docker build . -t chainsaw -f chainsaw_dockerfile --no-cache
 #
 # Example URL for Chainsaw release:
 # https://github.com/WithSecureLabs/chainsaw/releases/download/v2.10.0/chainsaw_x86_64-unknown-linux-gnu.tar.gz
@@ -23,6 +23,7 @@ ARG CHAINSAW_URL="https://api.github.com/repos/withsecurelabs/chainsaw/releases/
 ARG ARCHITECTURE="x86_64"
 
 # Update package list and install necessary packages
+ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive \
     apt-get install --yes --no-install-recommends \
