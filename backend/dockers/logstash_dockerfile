@@ -3,7 +3,7 @@
 #
 # This Dockerfile builds the logstash container.
 # To build the container, run:
-# docker build . -t logstash -f logstash_dockerfile
+# docker build . -t logstash -f logstash_dockerfile --no-cache
 # docker run --network=elastic -v <PWD>:/opt/data/ logstash
 #
 #########################################################
