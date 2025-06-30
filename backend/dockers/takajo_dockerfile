@@ -3,7 +3,7 @@
 #
 # This Dockerfile builds the Chainsaw container.
 # To build the container, run:
-# docker build . -t takajo -f takajo_dockerfile
+# docker build . -t takajo -f takajo_dockerfile --no-cache
 #
 # Example URL for Takajo release:
 # https://github.com/Yamato-Security/takajo/releases/download/v2.7.1/takajo-2.7.1-lin-x64-gnu.zip
@@ -16,7 +16,7 @@ ARG PYTHON_VERSION="3.12-slim"
 FROM "python:${PYTHON_VERSION}"
 
 # Define installation prefix, Chainsaw URL, and architecture
-ARG TAKAJO_INSTALL_PREFIX="/opt"
+ARG TAKAJO_INSTALL_PREFIX="/opt/takajo"
 ARG TAKAJO_URL="https://api.github.com/repos/Yamato-Security/takajo/releases/latest"
 
 # Define the architecture to use : x86_64, aarch64
@@ -40,11 +40,10 @@ RUN wget -O takajo.zip `curl -sL "${TAKAJO_URL}" | jq -r '.assets[] | select(.na
 
 # Extract the downloaded tarball and remove it
 RUN unzip takajo.zip && \
-    rm -rf *.zip && \
-    mv * takajo
+    rm -rf *.zip 
 
 # Set the working directory to takajo
-WORKDIR "${TAKAJO_INSTALL_PREFIX}/takajo"
+WORKDIR "${TAKAJO_INSTALL_PREFIX}/"
 RUN ln -s takajo-*-gnu takajo && \
     chmod +x takajo*
 
