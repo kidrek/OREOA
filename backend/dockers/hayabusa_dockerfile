@@ -3,7 +3,7 @@
 #
 # This Dockerfile builds the Hayabusa container.
 # To build the container, run:
-# docker build . -t hayabusa -f hayabusa_dockerfile
+# docker build . -t hayabusa -f hayabusa_dockerfile --no-cache
 #
 # Example URL for Hayabusa release:
 # https://github.com/Yamato-Security/hayabusa/releases/download/v2.17.0/hayabusa-2.17.0-linux-intel.zip
@@ -12,6 +12,7 @@
 FROM ubuntu
 
 # Install dependencies
+ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update && apt-get install -y \
     curl \
     unzip \
