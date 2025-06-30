@@ -1,5 +1,34 @@
 # OREOA - Initialisation
 
+## Pré-requis
+
+L'exécution de l'outil Ansible nécessite certains prérequis.
+
+```bash
+sudo apt update; sudo apt install ansible build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev curl git libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
+```
+
+Récupération de la dernière version de pyenv :
+
+```bash
+curl -fsSL https://pyenv.run | bash
+```
+
+
+Il peut être util d’installer des versions de pythons différentes en fonction des outils utilisés.
+Voici les étapes à réaliser pour la création d’un environnement virtuel dans un dossier spécifique.
+
+```bash
+pyenv install 3.10
+virtualenv -p /$HOME/.pyenv/versions/3.10.x/bin/python3.10 myenv
+```
+
+Cette dernière étape permet d’initialiser l’environnement, avant toute exécution du projet python et le téléchargement de module python.
+
+```bash
+. ./myenv/bin/activate && python -V
+```
+
 ## Déploiement
 
 Les variables attendues dans le fichier ```inventory``` sont les suivantes : 
@@ -25,7 +54,7 @@ Voici des exemples de fichier inventory :
 
 Une fois les données fournies, voici la commande à exécuter (potentiellement au sein d'une instance tmux/screen): 
 
-```
+```bash
 ansible-playbook -i inventory -K oreoa.yml
 ```
 
