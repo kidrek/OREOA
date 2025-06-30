@@ -23,8 +23,8 @@ ARG TAKAJO_URL="https://api.github.com/repos/Yamato-Security/takajo/releases/lat
 ARG ARCHITECTURE="x64"
 
 # Update package list and install necessary packages
+ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update && \
-    DEBIAN_FRONTEND=noninteractive \
     apt-get install --yes --no-install-recommends \
     curl git wget jq libpcre3 unzip && \
     apt-get autoremove --purge --yes && \
