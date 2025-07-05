@@ -27,8 +27,11 @@ run_zircolite() {
 	$COMMAND
 
 	# Zircolite - Retrieve evtx files list
+	echo "###################################################################################"""
+	echo "Retrieve evtx files list"
+	#COMMAND="apk add parallel; find $input_path -type f -name '*.evtx' | sed 's/ /\\\\ /g' | tee /output/zircolite/events_filepath.log"
 	IMAGE="alpine:latest"
-	COMMAND="apk add parallel; find $input_path -type f -name '*.evtx' | parallel -j -1 --progress echo {} | tee /output/zircolite/events_filepath.log"
+	COMMAND="find $input_path -type f -name '*.evtx'  | tee /output/zircolite/events_filepath.log"
 	docker pull $IMAGE
 	docker run --rm \
 		-v $input_path:$input_path \
@@ -38,57 +41,89 @@ run_zircolite() {
 		/bin/sh -c "$COMMAND"
 
 
-	for file in `cat $output_path/zircolite/events_filepath.log` 
+	### ZIRCOLITE Standard -- FONCTIONNE CORRECTEMENT !!!
+	#while IFS= read -r file;
+	#do
+	#	evtx_name=`basename "$file"`
+	#	evtx_path=$(printf '%q' "$file")
+	#	echo $evtx_path
+	#	echo $evtx_name
+
+	#	# Zircolite - Generate sysmon report
+	#	docker run --rm --tty \
+	#		-v $file:"/opt/data/$evtx_name":ro \
+	#		-v $output_path/zircolite:/opt/report \
+	#		zircolite \
+	#		--evtx "/opt/data/$evtx_name" \
+	#		-t /opt/report/tmp \
+	#		--debug \
+	#		-l /opt/report/log \
+	#		-o /opt/report/$evtx_name.json \
+	#		--ruleset rules/rules_windows_generic_pysigma.json
+	#done < $output_path/zircolite/events_filepath.log
+
+
+	## SCAN WITH SYSMON SIGMA RULES
+	echo "###################################################################################"""
+	echo "SCAN WITH SYSMON SIGMA RULES"
+	while IFS= read -r file;
 	do
-		evtx_path=$file
-		evtx_name=`basename $file`
-		echo $evtx_path
+		evtx_name=`basename "$file"`
+		evtx_path=$(printf '%q' "$file")
 
 		# Zircolite - Generate sysmon report
 		docker run --rm --tty \
-		-v "$evtx_path":"/opt/data/$evtx_name":ro \
-		-v $output_path/zircolite:/opt/report \
-		zircolite \
-		--evtx "/opt/data/$evtx_name" \
-		-t /opt/report/tmp \
-		--debug \
-		-l /opt/report/log \
-		--ruleset rules/rules_windows_sysmon_pysigma.json \
-		--template templates/exportForELK.tmpl \
-		--templateOutput "/opt/report/exportForELK_sysmon_$evtx_name.json" \
-		--template templates/exportForTimesketch.tmpl \
-		--templateOutput "/opt/report/exportForTimesketch_sysmon_$evtx_name.json" 
-	done
-
-
-	for file in `cat $output_path/zircolite/events_filepath.log` 
-	do
-		evtx_path=$file
-		evtx_name=`basename $file`
-		# Zircolite - Generate sysmon report
-		docker run --rm --tty \
-			-v $evtx_path:/opt/data/$evtx_name:ro \
-			-v $output_path/zircolite:/opt/report \
+			-v "$file":"/opt/data/$evtx_name":ro \
+			-v "$output_path/zircolite":/opt/report \
 			zircolite \
-			--evtx /opt/data/$evtx_name \
+			--evtx "/opt/data/$evtx_name" \
 			-t /opt/report/tmp \
 			--debug \
 			-l /opt/report/log \
+			-o "/opt/report/$evtx_name.json" \
+			--ruleset rules/rules_windows_sysmon_pysigma.json \
+			--template templates/exportForELK.tmpl \
+			--templateOutput "/opt/report/exportForELK_sysmon_$evtx_name.json" \
+			--template templates/exportForTimesketch.tmpl \
+			--templateOutput "/opt/report/exportForTimesketch_sysmon_$evtx_name.json"
+
+	done < $output_path/zircolite/events_filepath.log
+
+
+	## SCAN WITH GENERIC SIGMA RULES
+	echo "###################################################################################"""
+	echo "SCAN WITH GENERIC SIGMA RULES"
+	while IFS= read -r file;
+	do
+		evtx_name=`basename "$file"`
+		evtx_path=$(printf '%q' "$file")
+
+		# Zircolite - Generate sysmon report
+		docker run --rm --tty \
+			-v "$file":"/opt/data/$evtx_name":ro \
+			-v "$output_path/zircolite":/opt/report \
+			zircolite \
+			--evtx "/opt/data/$evtx_name" \
+			-t /opt/report/tmp \
+			--debug \
+			-l /opt/report/log \
+			-o "/opt/report/$evtx_name.json" \
 			--ruleset rules/rules_windows_generic_pysigma.json \
 			--template templates/exportForELK.tmpl \
-			--templateOutput /opt/report/exportForELK_generic_$evtx_name.json \
+			--templateOutput "/opt/report/exportForELK_generic_$evtx_name.json" \
 			--template templates/exportForTimesketch.tmpl \
-			--templateOutput /opt/report/exportForTimesketch_generic_$evtx_name.json 
-	done
+			--templateOutput "/opt/report/exportForTimesketch_generic_$evtx_name.json" 
+	done < $output_path/zircolite/events_filepath.log
+
+
 
 	if $EXPORT2ELK ; then 
 		# Zircolite - Import result in ELK stack
-		COMMAND="logstash -f /usr/share/logstash/pipeline/zircolite.conf"
 		docker run \
 			--network=elastic \
 			-v $output_path/zircolite:/opt/data/ \
 			logstash \
-			$COMMAND
+			/usr/share/logstash/bin/logstash -f /usr/share/logstash/pipeline/zircolite.conf
 
 		# Zircolite - Set replicas to 0
 		docker run --rm \
@@ -110,22 +145,70 @@ run_hayabusa() {
 	$IMAGE \
 	$COMMAND
 
-	# Hayabusa - Generate jsonl report to ELK stack
-	#hayabusa-2.16.0-lin-x64-gnu json-timeline -d /tmp/evidence -L -o hayabusa.json --ISO-8601 -p super-verbose
-	docker run --rm --tty \
+	## Update rules
+	docker run --tty \
 	-v $input_path:/opt/data:ro \
 	-v $output_path/hayabusa:/opt/report \
+	-l hayabusa \
+	hayabusa update-rules
+
+	# Hayabusa - Generate Computer metrics
+	#hayabusa-2.16.0-lin-x64-gnu eid-metrics -d /tmp/evidence -o hayabusa.json 
+	docker run --tty \
+	-v $input_path:/opt/data:ro \
+	-v $output_path/hayabusa:/opt/report \
+	-l hayabusa \
 	hayabusa \
-	json-timeline \
-	--JSONL-output \
-	--ISO-8601 \
-	-U \
-	-m low \
-	--no-wizard \
-	--no-color \
-	--quiet \
+	computer-metrics \
 	-d /opt/data \
-	-o /opt/report/report-hayabusa.jsonl
+	-o /opt/report/report-hayabusa-computer-metrics.jsonl \
+	-C
+
+	# Hayabusa - Generate EventIDs metrics
+	#hayabusa-2.16.0-lin-x64-gnu eid-metrics -d /tmp/evidence -o hayabusa.json 
+	docker run --tty \
+	-v $input_path:/opt/data:ro \
+	-v $output_path/hayabusa:/opt/report \
+	-l hayabusa \
+	hayabusa \
+	eid-metrics \
+	-d /opt/data \
+	-o /opt/report/report-hayabusa-eid-metrics.jsonl \
+	-C
+
+	# Hayabusa - Generate Pivot-keywords-list
+	#hayabusa-2.16.0-lin-x64-gnu eid-metrics -d /tmp/evidence -o hayabusa.json 
+	docker run --tty \
+	-v $input_path:/opt/data:ro \
+	-v $output_path/hayabusa:/opt/report \
+	-l hayabusa \
+	hayabusa \
+	pivot-keywords-list \
+	-d /opt/data \
+	--no-wizard \
+	-o /opt/report/report-hayabusa-keywords \
+	-C
+
+	# Hayabusa - Generate jsonl report to ELK stack
+	#hayabusa-2.16.0-lin-x64-gnu json-timeline -d /tmp/evidence -L -o hayabusa.json --ISO-8601 -p super-verbose
+	docker run --tty \
+		-v $input_path:/opt/data:ro \
+		-v $output_path/hayabusa:/opt/report \
+		-l hayabusa \
+		hayabusa \
+		json-timeline \
+		--JSONL-output \
+		--ISO-8601 \
+		-U \
+		-m low \
+		--no-wizard \
+		--no-color \
+		--quiet \
+		-d /opt/data \
+		-o /opt/report/report-hayabusa.jsonl \
+		--scan-all-evtx-files \
+		--enable-all-rules \
+		-C -v
 
 
 	if $EXPORT2TIMESKETCH ; then 
@@ -164,12 +247,11 @@ run_hayabusa() {
 
 
 	# Hayabusa - Import result in ELK stack
-	COMMAND="logstash -f /usr/share/logstash/pipeline/hayabusa.conf"
 	docker run \
 		--network=elastic \
 		-v $output_path/hayabusa:/opt/data/ \
 		logstash \
-		$COMMAND
+		/usr/share/logstash/bin/logstash -f /usr/share/logstash/pipeline/hayabusa.conf
 
 	# Hayabusa - Set replicas to 0
 	docker run --rm \
@@ -212,6 +294,14 @@ run_chainsaw() {
 	$IMAGE \
 	$COMMAND
 
+	docker run --rm --tty \
+	-v $input_path:/opt/data:ro \
+	-v $output_path/chainsaw:/opt/report \
+	chainsaw \
+	detect \
+	/opt/data \
+	--json -o /opt/report/report-chainsaw.json
+
 	# Chainsaw - run hunting 
 	docker run --rm --tty \
 	-v $input_path:/opt/data:ro \
@@ -222,6 +312,7 @@ run_chainsaw() {
 	-r /opt/chainsaw-src/rules/ \
 	-s /opt/sigma/ \
 	--skip-errors \
+	--load-unknown \
 	--mapping /opt/chainsaw-src/mappings/sigma-event-logs-all.yml \
 	--json -o /opt/report/report-chainsaw.json
 
@@ -241,12 +332,12 @@ run_chainsaw() {
 
 	if $EXPORT2ELK ; then 
 	# Chainsaw - Import result in ELK stack
-	COMMAND="logstash -f /usr/share/logstash/pipeline/chainsaw.conf"
-	docker run --rm \
+	docker run \
 		--network=elastic \
-		-v $output_path/chainsaw:/opt/data/ \
+		-v $output_path/chainsaw:/opt/data \
+		--rm \
 		logstash \
-		$COMMAND
+		/usr/share/logstash/bin/logstash -f /usr/share/logstash/pipeline/chainsaw.conf
 
 	docker run --rm \
 		--network=elastic \
@@ -349,13 +440,13 @@ generate_hashes() {
 }
 
 ## Step 00 - Retrieve evtx files and rename all files with space
-IMAGE="alpine:latest"
-docker pull $IMAGE
-docker run --rm \
-	-v $input_path:/opt/data \
-	--name dfirtools \
-	$IMAGE \
-	/bin/sh -c "find /opt/data -type f -name '* *.evtx' -exec sh -c 'mv \"\$0\" \"\${0// /_}\"' {} \;" 
+#IMAGE="alpine:latest"
+#docker pull $IMAGE
+#docker run --rm \
+#	-v $input_path:/opt/data \
+#	--name dfirtools \
+#	$IMAGE \
+#	/bin/sh -c "find /opt/data -type f -name '* *.evtx' -exec sh -c 'mv \"\$0\" \"\${0// /_}\"' {} \;" 
 
 
 ## Step 1 - run zircolite -- Disabled by default / Issue with the high numbers of evtx files
@@ -371,8 +462,8 @@ run_takajo
 sleep 5
 
 # Step 4 - run chainsaw -- Disabled by default / Stay stuck without error
-#run_chainsaw
-#sleep 5
+run_chainsaw
+sleep 5
 
 # Step 5 - run plaso
 run_plaso
