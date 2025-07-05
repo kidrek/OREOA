@@ -23,7 +23,7 @@ Here are the solutions deployed:
 | ----------------- | --------------------------------------------------------------------------- | ------------------------------------------------- | --------------------------------------------------------- |
 | **Chainsaw**      | Outil rapide d'analyse de logs Windows EVTX basé sur des règles Sigma       | Journaux d’événements Windows (.evtx)             | [Chainsaw](https://github.com/WithSecureLabs/chainsaw)    |
 | **Hayabusa**      | Analyse rapide des journaux Windows EVTX basée sur Sigma                    | Journaux d’événements Windows (.evtx)             | [Hayabusa](https://github.com/Yamato-Security/hayabusa)   |
-| **Regrippy**      | Outil d’analyse des hives de registre Windows en ligne de commande          | Hives de registre Windows (NTUSER.DAT, SYSTEM...) | [Regrippy](https://github.com/mnrkbys/RegRipper3.0)       |
+| **Regrippy**      | Outil d’analyse des hives de registre Windows en ligne de commande          | Hives de registre Windows (NTUSER.DAT, SYSTEM...) | [Regrippy](https://github.com/airbus-cert/regrippy)       |
 | **Zircolite**     | Analyse légère et rapide de logs EVTX avec détection via règles Sigma       | Journaux d’événements Windows (.evtx)             | [Zircolite](https://github.com/wagga40/zircolite)         |
 
 
