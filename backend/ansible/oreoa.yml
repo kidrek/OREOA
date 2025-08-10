@@ -6,6 +6,7 @@
   vars:
       toolsDir: "oreoa_deployed"
       timesketchDir: "../../{{ toolsDir }}/timesketch"
+      yaraDir: "../../{{ toolsDir }}/yara"
       keepass_db_path: "../../{{toolsDir}}/oreoa.kdbx"
       keepass_db_password: "oreoa"
 
@@ -25,6 +26,7 @@
    - include_tasks: tasks/keepassXC_create_db.yml
    - include_tasks: tasks/elk.yml
    - include_tasks: tasks/timesketch.yml
+   - include_tasks: tasks/yara.yml
 
    - include_tasks: tasks/chainsaw.yml
    - include_tasks: tasks/hayabusa.yml

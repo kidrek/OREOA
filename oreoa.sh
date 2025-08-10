@@ -427,6 +427,39 @@ run_plaso() {
 }
 
 
+run_yara() {
+	# Yara - Remove old report
+	IMAGE="alpine:latest"
+	COMMAND="rm -rf /opt/report/yara/"
+	docker pull $IMAGE
+	docker run --rm \
+		-v $output_path:/opt/report \
+		--name dfirtools \
+		$IMAGE \
+		$COMMAND
+
+	# Yara - Create temporary folder
+	IMAGE="alpine:latest"
+	COMMAND="/bin/mkdir -p /opt/report/yara"
+	docker pull $IMAGE
+	docker run --rm \
+		-v $output_path:/opt/report \
+		--name dfirtools \
+		$IMAGE \
+		$COMMAND
+
+
+	# Yara - start timeline generation
+	#COMMAND="yara -r -p 4 --skip-larger=500000000 --no-warnings -C /opt/yara/rules_compiled.yac /opt/data  | jq -R 'capture(\"^(?<rule>\\S+)\\s+(?<file>.*)$\")' | jq -s -c \"group_by(.file) | .[]  | {file: .[0].file, rules: (map(.rule)|unique)}\" | tee /opt/report/results.json"
+	COMMAND="/usr/local/bin/yr scan -o ndjson --skip-larger=500000000 -w -r --disable-console-logs /opt/yara/rules_index.yar /opt/data/ | tee /opt/report/report.ndjson"
+	docker run --rm -it \
+		-v $input_path:/opt/data:ro \
+		-v $output_path/yara:/opt/report \
+		-v $(pwd)/oreoa_deployed/yara:/opt/yara \
+		yarax sh -c "$COMMAND"
+
+}
+
 ## Function to generate hashes
 generate_hashes() {
 	IMAGE="ubuntu:latest"
@@ -450,28 +483,32 @@ generate_hashes() {
 
 
 ## Step 1 - run zircolite -- Disabled by default / Issue with the high numbers of evtx files
-run_zircolite
-sleep 5
+#run_zircolite
+#sleep 5
 
 # Step 2 - run hayabusa [WORKS WELL]
-run_hayabusa
-sleep 5
+#run_hayabusa
+#sleep 5
 
 ## Step 3 - run takajo  [WORKS WELL]
-run_takajo
-sleep 5
+#run_takajo
+#sleep 5
 
 # Step 4 - run chainsaw -- Disabled by default / Stay stuck without error
-run_chainsaw
-sleep 5
+#run_chainsaw
+#sleep 5
 
 # Step 5 - run plaso
-run_plaso
-sleep 5
+#run_plaso
+#sleep 5
 
-## Step 6 - generate hashes
-generate_hashes
-sleep 5
+# Step 6 - run yara
+run_yara
+#sleep 5
+
+## Step X - generate hashes
+#generate_hashes
+#sleep 5
 
 
 

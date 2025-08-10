@@ -1,0 +1,125 @@
+
+
+# Creation de l"index de l"ensemble des règles
+## find /home/kidrek/Downloads/Loki/kiki/rules -iname "*.yar" -exec echo "include "{}"" \; | tee rules_index.yar
+## yarac -w rule_index.yar rules_compiled.yac
+
+# Execution de l"analyse YARA : 
+## yara -r -p 4 --skip-larger=500000000 --no-warnings  -C ./rules_compiled.yac {INPUT_PATH} | jq -R "capture("^(?<rule>\\S+)\\s+(?<file>.*)$")" | jq -s "group_by(.file) | map({file: .[0].file, rules: (map(.rule) | unique)})" | results.json
+## yara -r -p 4 --skip-larger=500000000 --no-warnings -C ./rules_compiled.yac {INPUT_PATH} | jq -R "capture("^(?<rule>\\S+)\\s+(?<file>.*)$")" | jq -s -c "group_by(.file) | .[]  | {file: .[0].file, rules: (map(.rule)|unique)}" | tee results.json
+
+## * --skip-larger=500000000 : N"analyse pas les fichiers de plus de 500MB
+
+
+- name: "Yara - Stop ands remove old container"
+  docker_container:
+    name: "{{ item.name }}"
+    state: absent
+    restart_policy: no
+  ignore_errors: True
+  loop:
+    - { name : "yarax", file: "yarax_dockerfile" }
+    - { name : "yarac", file: "yarac_dockerfile" }
+
+
+- name: Yara - Build image
+  community.docker.docker_image:
+    name: "{{ item.name }}"
+    build:
+      path: ../
+      dockerfile: dockers/"{{ item.file }}"
+      nocache: true
+    source: build
+    state: present
+  loop:
+    - { name : "yarax", file: "yarax_dockerfile" }
+    - { name : "yarac", file: "yarac_dockerfile" }
+
+
+- name: Yara - Build image container
+  community.docker.docker_container:
+    name: "{{ item.name }}"
+    image: "{{ item.name }}"
+    recreate: true
+    restart: no
+    restart_policy: "no"
+    state: "stopped"
+  loop:
+    - { name : "yarax", file: "yarax_dockerfile" }
+    - { name : "yarac", file: "yarac_dockerfile" }
+
+
+- name: "Yara | Check if folder exists"
+  stat:
+    path: "{{ yaraDir }}"
+  register: yaraDirectory
+  when: arch == "amd64"
+
+
+- name: "Yara | Remove old folder"
+  file:
+    path: "{{ yaraDir }}"
+    state: absent
+  when: 
+    - arch == "amd64"
+    - yaraDirectory.stat.exists
+  ignore_errors: True
+
+
+- name: "Yara | Create folder"
+  become_user: "{{ ansible_user }}"
+  file:
+    path: "{{ yaraDir }}/rules"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+  when: 
+    - arch == "amd64"
+
+
+- name: "Yara | Get all rules"
+  become_user: "{{ ansible_user }}"
+  git:
+    repo: "{{ item.repo }}"
+    accept_hostkey: yes
+    dest: "{{ yaraDir }}/rules/{{ item.name }}"
+    recursive: yes
+    force: true
+  environment:
+    GIT_TERMINAL_PROMPT: 0
+  loop:
+    - { repo: "https://github.com/elastic/protections-artifacts.git", name: "elastic" }
+    - { repo: "https://github.com/eset/malware-ioc.git", name: "eset" }
+    - { repo: "https://github.com/intezer/yara-rules", name: "intezer" }
+    - { repo: "https://github.com/JPCERTCC/jpcert-yara", name: "jpcert" }
+    - { repo: "https://github.com/reversinglabs/reversinglabs-yara-rules", name: "reversinglabs" }
+    - { repo: "https://github.com/advanced-threat-research/Yara-Rules", name: "trellix" }
+    - { repo: "https://github.com/kidrek/yara-forensics.git", name: "forensics" }
+    - { repo: "https://github.com/bartblaze/Yara-rules.git", name: "bartblaze" }
+  when: 
+    - arch == "amd64"
+
+
+- name: "Yara | Get Yara rules index"
+  become_user: "{{ ansible_user }}"
+  ansible.builtin.shell: cd {{ yaraDir }}/; rm -f rules_index.yar; find ./rules -iname "*.yar" -exec echo "include \"{}\"" \; | tee rules_index.yar ;
+  when: 
+    - arch == "amd64"
+
+
+#- name: "Yara | Get absolute rules folder path"
+#  ansible.builtin.command:
+#    cmd: "readlink -f {{ yaraDir }}"
+#  register: yaraAbsDir
+#  changed_when: False
+#
+#
+#- name: "Yara | Generate a compiled rules"
+#  community.docker.docker_container:
+#    name: yarac
+#    image: yarac
+#    state: started
+#    volumes :
+#      - "{{ yaraAbsDir.stdout }}:/opt/yara:rw"
+#    command: ["-w","/opt/yara/rules_index.yar","/opt/yara/rules_compiled.yac"]
+
