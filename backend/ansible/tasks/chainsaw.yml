@@ -11,6 +11,7 @@
     build:
       path: ../
       dockerfile: dockers/chainsaw_dockerfile
+      nocache: true
     source: build
     state: present
 
