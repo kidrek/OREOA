@@ -27,7 +27,7 @@
     name: "{{ item.name }}"
     build:
       path: ../
-      dockerfile: dockers/"{{ item.file }}"
+      dockerfile: "dockers/{{ item.file }}"
       nocache: true
     source: build
     state: present
