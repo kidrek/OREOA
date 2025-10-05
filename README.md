@@ -3,6 +3,10 @@
 Here is OREOA, a project aimed at providing an automated processing solution for data collected during a digital forensics investigation.
 The solution first focuses on standardizing the format of the collected data, followed by an initial analysis to detect any suspicious or malicious behavior (using tools such as Zircolite, Hayabusa, and others). Finally, the processed data is indexed into an ElasticSearch instance and visualized in Timesketch, to support and streamline the analysts' work.
 
+## ROADMAP
+
+* CLAMAV : https://gitlab.com/CinCan/tools/-/tree/master/stable/clamav
+
 ## Deployment
 
 ### 1. Deploy backend 
@@ -75,3 +79,7 @@ keepassxc-cli show --show-protected {PATH}/OREOA/oreoa_deployed/oreoa.kdbx times
 - Capability to set variables paths as ```oreoa.sh``` arguments
 - Capability to monitor a specific directory to process all new uploaded artifacts
 - Add linux workflow 
+- Add tools
+  - Loki / Thor Light
+  - ClamAV
+  - Yara
