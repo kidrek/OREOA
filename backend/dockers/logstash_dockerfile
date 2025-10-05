@@ -14,6 +14,9 @@ FROM docker.elastic.co/logstash/logstash:8.15.0
 # delete default configuration
 RUN rm -f /usr/share/logstash/pipeline/logstash.conf
 
+# Install prune filter
+RUN /usr/share/logstash/bin/logstash-plugin install logstash-filter-prune
+
 # copy configurations
 COPY dockers/configurations/logstash/pipeline /usr/share/logstash/pipeline/
 #COPY ./config/ /usr/share/logstash/config/

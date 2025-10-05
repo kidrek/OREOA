@@ -18,7 +18,7 @@ run_zircolite() {
 
 	# Zircolite - Create a new report folder
 	IMAGE="alpine:latest"
-	COMMAND="/bin/mkdir /opt/report/zircolite"
+	COMMAND="/bin/mkdir -p /opt/report/zircolite/winevt2json"
 	docker pull $IMAGE
 	docker run --rm \
 	-v $output_path:/opt/report \
@@ -41,28 +41,6 @@ run_zircolite() {
 		/bin/sh -c "$COMMAND"
 
 
-	### ZIRCOLITE Standard -- FONCTIONNE CORRECTEMENT !!!
-	#while IFS= read -r file;
-	#do
-	#	evtx_name=`basename "$file"`
-	#	evtx_path=$(printf '%q' "$file")
-	#	echo $evtx_path
-	#	echo $evtx_name
-
-	#	# Zircolite - Generate sysmon report
-	#	docker run --rm --tty \
-	#		-v $file:"/opt/data/$evtx_name":ro \
-	#		-v $output_path/zircolite:/opt/report \
-	#		zircolite \
-	#		--evtx "/opt/data/$evtx_name" \
-	#		-t /opt/report/tmp \
-	#		--debug \
-	#		-l /opt/report/log \
-	#		-o /opt/report/$evtx_name.json \
-	#		--ruleset rules/rules_windows_generic_pysigma.json
-	#done < $output_path/zircolite/events_filepath.log
-
-
 	## SCAN WITH SYSMON SIGMA RULES
 	echo "###################################################################################"""
 	echo "SCAN WITH SYSMON SIGMA RULES"
@@ -77,15 +55,26 @@ run_zircolite() {
 			-v "$output_path/zircolite":/opt/report \
 			zircolite \
 			--evtx "/opt/data/$evtx_name" \
-			-t /opt/report/tmp \
+			-t /opt/report/tmp/ \
 			--debug \
+			--keeptmp \
 			-l /opt/report/log \
-			-o "/opt/report/$evtx_name.json" \
+			-o "/opt/report/detected_events_$evtx_name.json" \
 			--ruleset rules/rules_windows_sysmon_pysigma.json \
 			--template templates/exportForELK.tmpl \
 			--templateOutput "/opt/report/exportForELK_sysmon_$evtx_name.json" \
 			--template templates/exportForTimesketch.tmpl \
 			--templateOutput "/opt/report/exportForTimesketch_sysmon_$evtx_name.json"
+
+		# Backup All JSON Windows Event logs file 
+		IMAGE="alpine:latest"
+		COMMAND="mv /output/tmp/*.json /output/winevt2json/; rm -rf /output/tmp/"
+		docker pull $IMAGE
+		docker run --rm \
+			-v $output_path/zircolite:/output \
+			--name dfirtools \
+			$IMAGE \
+			/bin/sh -c "$COMMAND"
 
 	done < $output_path/zircolite/events_filepath.log
 
@@ -107,7 +96,7 @@ run_zircolite() {
 			-t /opt/report/tmp \
 			--debug \
 			-l /opt/report/log \
-			-o "/opt/report/$evtx_name.json" \
+			-o "/opt/report/detected_events_$evtx_name.json" \
 			--ruleset rules/rules_windows_generic_pysigma.json \
 			--template templates/exportForELK.tmpl \
 			--templateOutput "/opt/report/exportForELK_generic_$evtx_name.json" \
@@ -115,10 +104,9 @@ run_zircolite() {
 			--templateOutput "/opt/report/exportForTimesketch_generic_$evtx_name.json" 
 	done < $output_path/zircolite/events_filepath.log
 
-
-
 	if $EXPORT2ELK ; then 
-		# Zircolite - Import result in ELK stack
+		### STEP 1
+		# Zircolite - Import detected events in ELK stack
 		docker run \
 			--network=elastic \
 			-v $output_path/zircolite:/opt/data/ \
@@ -129,7 +117,23 @@ run_zircolite() {
 		docker run --rm \
 			--network=elastic \
 			logstash \
-			curl -XPUT http://elasticsearch:9200/zircolite/_settings -d '{"index":{"refresh_interval":"-1", "number_of_replicas":0}}' -H "Content-Type: application/json"
+			curl -XPUT http://elasticsearch:9200/zircolite_suspicious_event/_settings -d '{"index":{"refresh_interval":"-1", "number_of_replicas":0}}' -H "Content-Type: application/json"
+
+
+		### STEP 2
+		# Zircolite - Import Windows events logs in ELK stack
+		docker run \
+			--network=elastic \
+			-v $output_path/zircolite/winevt2json:/opt/data/ \
+			logstash \
+			/usr/share/logstash/bin/logstash -f /usr/share/logstash/pipeline/zircolite_evtx.conf
+
+		# Zircolite - Set replicas to 0
+		docker run --rm \
+			--network=elastic \
+			logstash \
+			curl -XPUT http://elasticsearch:9200/zircolite_evtx/_settings -d '{"index":{"refresh_interval":"-1", "number_of_replicas":0}}' -H "Content-Type: application/json"
+
 	fi
 }
 
@@ -370,6 +374,21 @@ run_plaso() {
 	$IMAGE \
 	$COMMAND
 
+
+	## Plaso - start timeline generation
+	#docker run --rm \
+	#-v $input_path:/opt/data:ro \
+	#-v $output_path/plaso:/opt/report \
+	#plaso log2timeline \
+	#-z UTC \
+	#--storage_file /opt/report/plaso_log2timeline.plaso \
+	#--partitions all \
+	#--volumes all \
+	#--logfile /opt/report/plaso_log2timeline.log.gz \
+	#--temporary_directory /opt/report/tmp/ \
+	#/opt/data
+
+
 	# Plaso - start timeline generation
 	docker run --rm \
 	-v $input_path:/opt/data:ro \
@@ -379,9 +398,18 @@ run_plaso() {
 	--storage_file /opt/report/plaso_log2timeline.plaso \
 	--partitions all \
 	--volumes all \
+	--parsers !winevtx,!winevt \
 	--logfile /opt/report/plaso_log2timeline.log.gz \
 	--temporary_directory /opt/report/tmp/ \
 	/opt/data
+
+	# Plaso - Run PINFO 
+	docker run --rm \
+        -v $input_path:/opt/data:ro \
+        -v $output_path/plaso:/opt/report \
+        plaso pinfo \
+        -w /opt/report/pinfo.log \
+        /opt/report/plaso_log2timeline.plaso	
 
 	if $EXPORT2TIMESKETCH ; then 
 		# Plaso - Move result file to timesketch
@@ -460,6 +488,41 @@ run_yara() {
 
 }
 
+run_clamav() {
+	# ClamAV - Remove old report
+	IMAGE="alpine:latest"
+	COMMAND="rm -rf /opt/report/clamav/"
+	docker pull $IMAGE
+	docker run --rm \
+		-v $output_path:/opt/report \
+		--name dfirtools \
+		$IMAGE \
+		$COMMAND
+
+	# ClamAV - Create temporary folder
+	IMAGE="alpine:latest"
+	COMMAND="/bin/mkdir -p /opt/report/clamav"
+	docker pull $IMAGE
+	docker run --rm \
+		-v $output_path:/opt/report \
+		--name dfirtools \
+		$IMAGE \
+		$COMMAND
+
+	# ClamAV - Update databases
+	docker run --rm -it \
+		clamav \
+		sh -c 'freshclam'
+
+
+	# ClamAV - start analyse
+	docker run --rm -it \
+		-v $input_path:/opt/clamav:ro \
+		-v $output_path/clamav:/opt/report \
+		clamav \
+		sh -c 'clamscan --infected --recursive=yes --remove=no --detect-pua=yes --scan-mail=yes --log=/opt/report/clamav.log /opt/clamav'
+}
+
 ## Function to generate hashes
 generate_hashes() {
 	IMAGE="ubuntu:latest"
@@ -471,15 +534,6 @@ generate_hashes() {
 	  $IMAGE \
 	  sh -c "$COMMAND"
 }
-
-## Step 00 - Retrieve evtx files and rename all files with space
-#IMAGE="alpine:latest"
-#docker pull $IMAGE
-#docker run --rm \
-#	-v $input_path:/opt/data \
-#	--name dfirtools \
-#	$IMAGE \
-#	/bin/sh -c "find /opt/data -type f -name '* *.evtx' -exec sh -c 'mv \"\$0\" \"\${0// /_}\"' {} \;" 
 
 
 ## Step 1 - run zircolite -- Disabled by default / Issue with the high numbers of evtx files
@@ -499,12 +553,16 @@ generate_hashes() {
 #sleep 5
 
 # Step 5 - run plaso
-#run_plaso
-#sleep 5
+run_plaso
+sleep 5
 
 # Step 6 - run yara
 run_yara
-#sleep 5
+sleep 5
+
+# Step 7 - run clamav
+run_clamav
+sleep 5
 
 ## Step X - generate hashes
 #generate_hashes
