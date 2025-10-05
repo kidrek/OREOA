@@ -29,6 +29,7 @@
    - include_tasks: tasks/yara.yml
 
    - include_tasks: tasks/chainsaw.yml
+   - include_tasks: tasks/clamav.yml
    - include_tasks: tasks/hayabusa.yml
    - include_tasks: tasks/plaso.yml
    - include_tasks: tasks/regrippy.yml
