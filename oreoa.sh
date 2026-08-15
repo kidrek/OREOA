@@ -536,31 +536,31 @@ generate_hashes() {
 }
 
 
-## Step 1 - run zircolite -- Disabled by default / Issue with the high numbers of evtx files
-#run_zircolite
-#sleep 5
+## Step 1 - run zircolite [WORKS WELL]
+run_zircolite
+sleep 5
 
 # Step 2 - run hayabusa [WORKS WELL]
-#run_hayabusa
-#sleep 5
+run_hayabusa
+sleep 5
 
 ## Step 3 - run takajo  [WORKS WELL]
-#run_takajo
-#sleep 5
+run_takajo
+sleep 5
 
 # Step 4 - run chainsaw -- Disabled by default / Stay stuck without error
 #run_chainsaw
 #sleep 5
 
-# Step 5 - run plaso
+# Step 5 - run plaso  [WORKS WELL]
 run_plaso
 sleep 5
 
-# Step 6 - run yara
+# Step 6 - run yara  [WORKS WELL]
 run_yara
 sleep 5
 
-# Step 7 - run clamav
+# Step 7 - run clamav  [WORKS WELL]
 run_clamav
 sleep 5
 
