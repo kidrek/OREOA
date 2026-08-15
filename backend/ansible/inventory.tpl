@@ -1,0 +1,1 @@
+127.0.0.1 ansible_connection=local ansible_user=<user> arch=amd64

@@ -1,0 +1,25 @@
+- name: "Chainsaw - Stop ands remove old container"
+  docker_container:
+    name: "chainsaw"
+    state: absent
+    restart_policy: no
+  ignore_errors: True
+
+- name: Chainsaw - Build image
+  community.docker.docker_image:
+    name: chainsaw
+    build:
+      path: ../
+      dockerfile: dockers/chainsaw_dockerfile
+      nocache: true
+    source: build
+    state: present
+
+- name: Chainsaw - Build image container
+  community.docker.docker_container:
+    name: chainsaw
+    image: chainsaw
+    recreate: true
+    restart: no
+    restart_policy: "no"
+    state: "stopped"

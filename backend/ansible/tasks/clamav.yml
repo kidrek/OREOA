@@ -1,0 +1,25 @@
+- name: "ClamAV - Stop ands remove old container"
+  docker_container:
+    name: "clamav"
+    state: absent
+    restart_policy: no
+  ignore_errors: True
+
+- name: ClamAV - Build image
+  community.docker.docker_image:
+    name: clamav
+    build:
+      path: ../
+      dockerfile: dockers/clamav_dockerfile
+      nocache: true
+    source: build
+    state: present
+
+- name: ClamAV - Build image container
+  community.docker.docker_container:
+    name: clamav
+    image: clamav
+    recreate: true
+    restart: no
+    restart_policy: "no"
+    state: "stopped"

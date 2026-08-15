@@ -1,0 +1,25 @@
+- name: "Takajo - Stop ands remove old container"
+  docker_container:
+    name: takajo
+    state: absent
+    restart_policy: no
+  ignore_errors: True
+
+- name: Takajo - Build image
+  community.docker.docker_image:
+    name: takajo
+    build:
+      path: ../
+      dockerfile: dockers/takajo_dockerfile
+      nocache: true
+    source: build
+    state: present
+
+- name: Takajo - Build image container
+  community.docker.docker_container:
+    name: takajo
+    image: takajo
+    recreate: true
+    restart: no
+    restart_policy: "no"
+    state: "stopped"

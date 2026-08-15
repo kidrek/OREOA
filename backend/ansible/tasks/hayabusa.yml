@@ -1,0 +1,25 @@
+- name: "Hayabusa - Stop ands remove old container"
+  docker_container:
+    name: "hayabusa"
+    state: absent
+    restart_policy: no
+  ignore_errors: True
+
+- name: Hayabusa - Build image
+  community.docker.docker_image:
+    name: hayabusa
+    build:
+      path: ../
+      dockerfile: dockers/hayabusa_dockerfile
+      nocache: true
+    source: build
+    state: present
+
+- name: Hayabusa - Build image container
+  community.docker.docker_container:
+    name: hayabusa
+    image: hayabusa
+    recreate: true
+    restart: no
+    restart_policy: "no"
+    state: "stopped"

@@ -1,0 +1,40 @@
+#########################################################
+#         CLAMAV Dockerfile
+#
+# This Dockerfile builds the ClamAV container.
+# To build the container, run:
+# docker build . -t clamav -f clamav_dockerfile --no-cache
+#
+# To run the container, run:
+# docker run --rm -it clamav sh -c "freshclam"     # Mise à jour des bases de données antivirales
+# docker run --rm -it clamav sh -c "clamscan -h"   # Exécution du scan
+# docker run --rm -it -v $input_path:/opt/clamav:ro -v $output_path/clamav:/opt/report clamav sh -c 'clamscan --infected --recursive=yes --remove=no --detect-pua=yes --scan-mail=yes --log=/opt/report/clamav.log /opt/clamav'
+#########################################################
+
+
+FROM rust:latest
+
+# Define work dir prefix, ClamAV and architecture
+ARG CLAMAV_WORKDIR="/opt/clamav"
+# Define the architecture to use : x86_64, aarch64
+ARG ARCHITECTURE="x86_64"
+
+
+# Update package list and install necessary packages
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive \
+    apt-get install --yes --no-install-recommends \
+    clamav && \
+    apt-get autoremove --purge --yes && \
+    rm -rf /var/lib/apt/lists/*
+
+# Download the latest clamAV database
+RUN freshclam --quiet --no-warnings
+
+# Set the working directory
+WORKDIR "${CLAMAV_WORKDIR}/"
+
+# Define the entry point and default command for the container
+#ENTRYPOINT ["clamscan"]
+#CMD ["--help"]

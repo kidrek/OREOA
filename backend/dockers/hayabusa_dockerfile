@@ -3,17 +3,21 @@
 #
 # This Dockerfile builds the Hayabusa container.
 # To build the container, run:
-# docker build . -t hayabusa -f hayabusa_dockerfile
+# docker build . -t hayabusa -f hayabusa_dockerfile --no-cache
 #
 # Example URL for Hayabusa release:
 # https://github.com/Yamato-Security/hayabusa/releases/download/v2.17.0/hayabusa-2.17.0-linux-intel.zip
 #########################################################
 
-# Define the Python version to use
-ARG PYTHON_VERSION="3.12-slim"
+FROM ubuntu
 
-# Use the specified Python version as the base image
-FROM "python:${PYTHON_VERSION}"
+# Install dependencies
+ENV DEBIAN_FRONTEND noninteractive
+RUN apt-get update && apt-get install -y \
+    curl \
+    unzip \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
 # Define installation prefix, Hayabusa URL, and architecture
 ARG HAYABUSA_INSTALL_PREFIX="/opt"
@@ -22,29 +26,26 @@ ARG HAYABUSA_URL="https://api.github.com/repos/Yamato-Security/hayabusa/releases
 # Define the architecture to use : lin-x64-gnu, lin-aarch64-gnu, lin-x64-musl
 ARG ARCHITECTURE="lin-x64-gnu" 
 
-# Update package list and install necessary packages
-RUN apt-get update && \
-    DEBIAN_FRONTEND=noninteractive \
-    apt-get install --yes --no-install-recommends \
-    curl git wget jq unzip && \
-    apt-get autoremove --purge --yes && \
-    rm -rf /var/lib/apt/lists/*
-
 # Set the working directory
 WORKDIR "${HAYABUSA_INSTALL_PREFIX}/HAYABUSA"
 
-# Download the latest Hayabusa release for the specified architecture
-RUN wget $(curl -sL "${HAYABUSA_URL}" | jq -r '.assets[] | select(.name | test("-'${ARCHITECTURE}'.zip$")) | .browser_download_url')
+# Fetch the latest Hayabusa release
+RUN curl -s "$HAYABUSA_URL" \
+  | grep "browser_download_url" \
+  | grep "$ARCHITECTURE.zip" \
+  | cut -d '"' -f 4 \
+  | xargs curl -L -o hayabusa.zip \
+  && unzip hayabusa.zip \
+  && rm hayabusa.zip \
+  && mv hayabusa-* hayabusa \
+  && chmod +x hayabusa
 
-# Decompress the downloaded zip file and remove it
-RUN unzip *.zip && \
-    rm -rf *.zip
 
 # Set executable permission and remove version from filename
-RUN chmod +x hayabusa-* && \
-    mv hayabusa-*-lin-x64-gnu hayabusa-lin-x64-gnu && \
-    ./hayabusa-lin-x64-gnu update-rules
+RUN  ./hayabusa update-rules
 
-# Define the entry point and default command for the container
-ENTRYPOINT ["./hayabusa-lin-x64-gnu"]
+# Default command
+ENTRYPOINT ["./hayabusa"]
 CMD ["help"]
+
+

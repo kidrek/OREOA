@@ -1,120 +1,85 @@
-# OREOA (mOnitor aRtefacts from Evidence, prOcess and Analyse them)
+# OREOA 
 
-OREOA is a forensic data processing and analysis tool that automates the collection, processing, and analysis of digital evidence. It integrates multiple forensic tools and provides both monitoring and manual processing capabilities.
+Here is OREOA, a project aimed at providing an automated processing solution for data collected during a digital forensics investigation.
+The solution first focuses on standardizing the format of the collected data, followed by an initial analysis to detect any suspicious or malicious behavior (using tools such as Zircolite, Hayabusa, and others). Finally, the processed data is indexed into an ElasticSearch instance and visualized in Timesketch, to support and streamline the analysts' work.
 
-## Features
+## ROADMAP
 
-- Automated evidence processing pipeline
-- Support for Velociraptor collections
-- Integration with multiple analysis tools:
-  - Plaso (Timeline analysis)
-  - Hayabusa (Windows Event Log analysis)
-  - Chainsaw (Event log analysis)
-  - Zircolite (SIGMA-based detection)
-  - ClamAV (Antivirus scanning)
-  - RegRippy (Windows Registry analysis)
-- Timesketch integration for timeline visualization
-- Both monitoring and manual processing modes
+* CLAMAV : https://gitlab.com/CinCan/tools/-/tree/master/stable/clamav
 
-## Prerequisites
+## Deployment
 
-- Linux (Debian/Ubuntu)
-- Docker and Docker Compose
-- Git
+### 1. Deploy backend 
 
-## Installation
+The backend is automatically deployed via Ansible.  
+Here are the solutions deployed:
+  
+* Data processing
 
-1. Clone the repository:
-```bash
-git clone https://github.com/kidrek/OREOA.git
-cd OREOA
-```
+| Solution          | Description courte                                                          | Type d'artefact traité                            | Lien officiel/documentation                               |
+| ----------------- | --------------------------------------------------------------------------- | ------------------------------------------------- | --------------------------------------------------------- |
+| **Plaso**         | Framework pour la création de chronologies à partir d’artefacts forensiques | Fichiers système, journaux, artefacts multiples   | [Plaso](https://plaso.readthedocs.io/en/latest/)          |
 
-2. Configure environment variables:
-```bash
-cp .env.tpl .env
-```
+  
+* Data analysis  
 
-Edit `.env` file with your configuration:
-```ini
-# Evidence Processing
-ARTIFACT_INPUT_PATH=/absolute/path/to/input
-SCAN_OUTPUT_PATH=/absolute/path/to/output
+| Solution          | Description courte                                                          | Type d'artefact traité                            | Lien officiel/documentation                               |
+| ----------------- | --------------------------------------------------------------------------- | ------------------------------------------------- | --------------------------------------------------------- |
+| **Chainsaw**      | Outil rapide d'analyse de logs Windows EVTX basé sur des règles Sigma       | Journaux d’événements Windows (.evtx)             | [Chainsaw](https://github.com/WithSecureLabs/chainsaw)    |
+| **Hayabusa**      | Analyse rapide des journaux Windows EVTX basée sur Sigma                    | Journaux d’événements Windows (.evtx)             | [Hayabusa](https://github.com/Yamato-Security/hayabusa)   |
+| **Regrippy**      | Outil d’analyse des hives de registre Windows en ligne de commande          | Hives de registre Windows (NTUSER.DAT, SYSTEM...) | [Regrippy](https://github.com/airbus-cert/regrippy)       |
+| **Zircolite**     | Analyse légère et rapide de logs EVTX avec détection via règles Sigma       | Journaux d’événements Windows (.evtx)             | [Zircolite](https://github.com/wagga40/zircolite)         |
 
-# Timesketch Configuration
-TIMESKETCH_USER=your_username
-TIMESKETCH_PASSWORD=your_password
-TIMESKETCH_DEFAULT_SKETCH_NAME=default_sketch
-TIMESKETCH_UPLOAD_PATH=/path/to/upload
 
-# Evidence Settings
-VELOCIRAPTOR_EVIDENCE_PATTERN=collection-.*\.zip
-VELOCIRAPTOR_EVIDENCE_PASSWORD=your_password
-EVTX_PATTERN=.evtx,.EVTX
-HASH_ALGO=sha256
-```
+* Data indexing
 
-3. Run the installation script:
-```bash
-chmod +x install.sh
-./install.sh
-```
+| Solution          | Description courte                                                          | Type d'artefact traité                            | Lien officiel/documentation                               |
+| ----------------- | --------------------------------------------------------------------------- | ------------------------------------------------- | --------------------------------------------------------- |
+| **Elastic Stack** | Suite d’outils pour la collecte, l’analyse et la visualisation de données   | Données indexées diverses (logs, JSON, etc.)      | [Elastic Stack](https://www.elastic.co/what-is/elk-stack) |
+| **Timesketch**    | Outil de visualisation et d’analyse de chronologies forensiques             | Chronologies d’événements                         | [Timesketch](https://timesketch.org)                      |
 
-## Usage
 
-**uv** has been installed as part of the installation script and the environment has been set up with python 3.12 so you should use itto run the scripts.
 
-### Monitor Mode
-
-Monitor mode automatically processes new evidence files as they appear in the input directory:
+Here is how to deploy backend :
 
 ```bash
-uv run oreoa_monitor.py
+$ git clone https://github.com/kidrek/OREOA.git
+$ cd OREOA/backend/ansible
+
+$ cp inventory.tpl inventory
+-> Set variables in inventory file
+
+$ ansible-playbook -i inventory -K oreoa.yaml
 ```
 
-### Manual Mode
+For security reasons, Timesketch credentials are stored in one keepass database in this path : ```{PATH}/OREOA/oreoa_deployed/oreoa.kdbx```.
 
-Process individual evidence files manually:
+These informations are also automaticaly added in ```OREOA/.env``` file by Ansible during installation step.
 
 ```bash
-uv run oreoa.py -i /path/to/evidence.zip -o /path/to/output/directory
+keepassxc-cli show --show-protected {PATH}/OREOA/oreoa_deployed/oreoa.kdbx timesketch 
+# The default password of keepass database : oreoa
 ```
 
-Options:
-- `-i, --input_evidence`: Path to the evidence file or directory
-- `-o, --output_analyse`: Path where analysis results will be stored
+## Workflow
 
-## Output Structure
 
-The tool creates the following directory structure for each processed artifact:
+1. Set evidences path and output reports in ```.env``` file ;
+2. Create a sketch in timesketch and set ```timesketch_sketch_id``` in ```.env``` file;
+3. Check that ELK stack & Timesketch dockers are up and and running, if not, you can set to ```false```, ```EXPORT2TIMESKETCH``` or ```EXPORT2ELK``` variables ;
+4. Start script 
+
 
 ```
-output/
-└── evidence_name_extracted/
-    ├── analyse/
-    │   ├── plaso/
-    │   ├── hayabusa/
-    │   ├── chainsaw/
-    │   ├── zircolite/
-    │   ├── clamav/
-    │   └── regrippy/
-    └── output/
+./oreoa.sh
 ```
 
-## Integrated Tools
+## Roadmap
 
-- **Plaso**: Creates super timelines from various artifacts
-- **Hayabusa**: Advanced Windows Event Log analysis
-- **Chainsaw**: High-speed Windows Event Log analysis
-- **Zircolite**: SIGMA-based threat detection
-- **ClamAV**: Antivirus scanning
-- **RegRippy**: Windows Registry analysis
-- **Timesketch**: Timeline visualization and analysis
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit pull requests.
-
-## License
-
-This project is licensed under the MIT License.
+- Capability to set variables paths as ```oreoa.sh``` arguments
+- Capability to monitor a specific directory to process all new uploaded artifacts
+- Add linux workflow 
+- Add tools
+  - Loki / Thor Light
+  - ClamAV
+  - Yara
